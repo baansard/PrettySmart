@@ -7,11 +7,41 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <!-- Login overlay -->
+  <div id="login-overlay" class="hidden">
+    <div id="login-panel">
+      <h1 class="login-title">PrettySmart ✦</h1>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-mode="login">Log in</button>
+        <button class="auth-tab" data-mode="register">Register</button>
+      </div>
+      <input id="auth-email" type="email" class="auth-input" placeholder="email" autocomplete="email">
+      <input id="auth-password" type="password" class="auth-input" placeholder="password" autocomplete="current-password">
+      <button id="auth-submit" class="auth-btn">Log in</button>
+      <p id="auth-error" class="auth-error"></p>
+    </div>
+  </div>
+
+  <!-- Game -->
   <canvas id="game"></canvas>
-  <button id="pet-shop-btn" class="sidebar-btn">Pet Shop</button>
+
+  <!-- Left sidebar -->
+  <div class="left-sidebar">
+    <button id="pet-shop-btn" class="sidebar-btn">Pet Shop</button>
+    <button id="manage-btn" class="sidebar-btn">Manage</button>
+  </div>
+
+  <!-- Manage Content overlay -->
+  <div id="manage-overlay" class="hidden">
+    <div id="manage-panel"></div>
+  </div>
+
   <p class="hint">WASD to walk · E at desk to study · Esc to close · H to show hitboxes</p>
 
-  <!-- Plain scripts (not modules) so the game runs by double-clicking index.html -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/input.js"></script>
   <script src="js/assets.js"></script>
   <script src="js/room.js"></script>
@@ -19,6 +49,7 @@
   <script src="js/camera.js"></script>
   <script src="js/study.js"></script>
   <script src="js/petshop.js"></script>
+  <script src="js/manage.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ function loop(time) {
   const dt = Math.min((time - lastTime) / 1000, 0.05); // seconds, capped so tab-switching doesn't teleport her
   lastTime = time;
 
-  if (Study.state === "closed") Player.update(dt, Room.getSolids());
+  if (Study.state === "closed" && !Manage.visible) Player.update(dt, Room.getSolids());
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -78,4 +78,4 @@ async function start() {
   requestAnimationFrame((t) => { lastTime = t; loop(t); });
 }
 
-start();
+// start() is called by auth.js after login

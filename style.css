@@ -4,20 +4,30 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #f4a7c8; /* pink edges around the scene */
+  background: #f4a7c8;
   font-family: "Trebuchet MS", sans-serif;
 }
 
 canvas {
   display: block;
-  image-rendering: pixelated; /* keeps pixel art crisp */
+  image-rendering: pixelated;
 }
 
-.sidebar-btn {
+.hidden { display: none !important; }
+
+/* ── Sidebar buttons ─────────────────────────────────────────────────────── */
+.left-sidebar {
   position: fixed;
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.sidebar-btn {
   background: #e06090;
   color: #fff;
   border: 3px solid #c0407a;
@@ -32,14 +42,14 @@ canvas {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   transition: background 0.15s, transform 0.15s;
-  z-index: 10;
 }
 
 .sidebar-btn:hover {
   background: #c94d7a;
-  transform: translateY(-50%) scale(1.05);
+  transform: scale(1.05);
 }
 
+/* ── Hint ────────────────────────────────────────────────────────────────── */
 .hint {
   position: fixed;
   bottom: 8px;
@@ -51,3 +61,261 @@ canvas {
   opacity: 0.8;
   pointer-events: none;
 }
+
+/* ── Login overlay ───────────────────────────────────────────────────────── */
+#login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+#login-panel {
+  background: #fce4ec;
+  border-radius: 24px;
+  padding: 36px 40px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.login-title {
+  text-align: center;
+  font-size: 22px;
+  color: #c2185b;
+  letter-spacing: 1px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid #f48fb1;
+  border-radius: 10px;
+  background: transparent;
+  color: #c2185b;
+  font-family: "Trebuchet MS", sans-serif;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.auth-tab.active {
+  background: #f48fb1;
+  color: #fff;
+}
+
+.auth-input {
+  padding: 10px 14px;
+  border: 2px solid #f48fb1;
+  border-radius: 10px;
+  background: #fff;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 14px;
+  color: #5a2030;
+  outline: none;
+}
+
+.auth-input:focus { border-color: #c2185b; }
+
+.auth-btn {
+  padding: 11px;
+  background: #e06090;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.auth-btn:hover { background: #c2185b; }
+
+.auth-error {
+  font-size: 13px;
+  color: #c0407a;
+  min-height: 18px;
+  text-align: center;
+}
+
+/* ── Manage Content overlay ──────────────────────────────────────────────── */
+#manage-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+#manage-panel {
+  background: #fce4ec;
+  border-radius: 24px;
+  padding: 32px 36px;
+  width: 460px;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.panel-title {
+  font-size: 20px;
+  color: #c2185b;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.panel-back {
+  background: none;
+  border: none;
+  color: #c2185b;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  width: fit-content;
+  opacity: 0.8;
+}
+
+.panel-back:hover { opacity: 1; }
+
+.panel-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-item {
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 12px;
+  color: #5a2030;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.panel-item:hover { background: rgba(255,255,255,0.9); }
+
+.panel-item.muted { color: #b07090; cursor: default; }
+.panel-item.muted:hover { background: rgba(255,255,255,0.6); }
+
+.panel-item.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  cursor: default;
+}
+
+.panel-item.row:hover { background: rgba(255,255,255,0.6); }
+
+.panel-item.small { font-size: 13px; padding: 8px 14px; }
+
+.panel-list.small .panel-item { font-size: 13px; padding: 8px 14px; }
+
+.panel-link {
+  background: none;
+  border: none;
+  color: #c2185b;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  opacity: 0.75;
+}
+
+.panel-link:hover { opacity: 1; }
+
+.panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-input {
+  padding: 9px 13px;
+  border: 2px solid #f48fb1;
+  border-radius: 10px;
+  background: #fff;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 14px;
+  color: #5a2030;
+  outline: none;
+  width: 100%;
+}
+
+.panel-input:focus { border-color: #c2185b; }
+
+.panel-textarea {
+  padding: 9px 13px;
+  border: 2px solid #f48fb1;
+  border-radius: 10px;
+  background: #fff;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 14px;
+  color: #5a2030;
+  outline: none;
+  width: 100%;
+  resize: vertical;
+  min-height: 70px;
+}
+
+.panel-textarea.tall { min-height: 160px; }
+.panel-textarea:focus { border-color: #c2185b; }
+
+.panel-btn {
+  padding: 9px 20px;
+  background: #e06090;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.15s;
+}
+
+.panel-btn:hover { background: #c2185b; }
+
+.panel-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #5a2030;
+  cursor: pointer;
+}
+
+.del-btn {
+  background: none;
+  border: none;
+  color: #c0407a;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.del-btn:hover { opacity: 1; }
+
+.muted { color: #b07090; font-style: italic; }
