@@ -1,2 +1,5 @@
 node_modules/
 .env
+bin/
+obj/
+.claude/settings.local.json

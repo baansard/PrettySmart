@@ -29,7 +29,7 @@ const Manage = {
   },
 
   async _loadClasses() {
-    const { data } = await DB.from('classes').select('*').order('name');
+    const data = await Api.get('/classes').catch(() => []);
     this.classes = data || [];
   },
 
@@ -81,7 +81,7 @@ const Manage = {
   // ── Screen 3a: flashcards ────────────────────────────────────────────────
   async _renderFlashcards() {
     const { data: cards } = await DB.from('flashcards')
-      .select('*').eq('class_id', this.selectedClass.id).order('created_at');
+      .select('*').eq('class_id', this.selectedClass.id).order('id');
 
     this._panel.innerHTML = `
       <button class="panel-back" id="back">← back</button>
@@ -118,12 +118,12 @@ const Manage = {
   // ── Screen 3b: quiz questions (grouped by chapter) ───────────────────────
   async _renderQuiz() {
     const [{ data: chapters }, { data: qs }] = await Promise.all([
-      DB.from('chapters').select('id, title').eq('class_id', this.selectedClass.id).order('created_at'),
+      DB.from('chapters').select('id, title').eq('class_id', this.selectedClass.id).order('id'),
       DB.from('quiz_questions')
         .select('*, chapter:chapter_id(title)')
         .eq('class_id', this.selectedClass.id)
         .order('chapter_id', { ascending: true, nullsFirst: false })
-        .order('created_at'),
+        .order('id'),
     ]);
 
     // Group questions by chapter
@@ -225,7 +225,7 @@ const Manage = {
   // ── Screen 3c: chapters ──────────────────────────────────────────────────
   async _renderChapters() {
     const { data: chs } = await DB.from('chapters')
-      .select('*').eq('class_id', this.selectedClass.id).order('created_at');
+      .select('*').eq('class_id', this.selectedClass.id).order('id');
 
     this._panel.innerHTML = `
       <button class="panel-back" id="back">← back</button>
@@ -280,13 +280,13 @@ const Manage = {
     this._on('cls-save', async () => {
       const name = document.getElementById('new-class').value.trim();
       if (!name) return;
-      await DB.from('classes').insert({ name, user_id: Auth.user.id });
+      await Api.post('/classes', { name });
       await this._loadClasses();
       this._renderManageClasses();
     });
     this._panel.querySelectorAll('.del-btn').forEach(b =>
       b.addEventListener('click', async () => {
-        await DB.from('classes').delete().eq('id', b.dataset.id);
+        await Api.del('/classes/' + encodeURIComponent(b.dataset.id));
         await this._loadClasses();
         this._renderManageClasses();
       })

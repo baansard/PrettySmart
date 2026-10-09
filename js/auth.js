@@ -2,7 +2,14 @@ const Auth = {
   user: null,
 
   async init() {
-    const { data: { session } } = await DB.auth.getSession();
+    // If the session check errors or hangs, fall back to the login screen instead of a blank page.
+    let session = null;
+    try {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('session check timed out')), 5000));
+      ({ data: { session } } = await Promise.race([DB.auth.getSession(), timeout]));
+    } catch (err) {
+      console.error('Could not restore session:', err);
+    }
     if (session) {
       this.user = session.user;
       this._ready();
@@ -69,4 +76,5 @@ const Auth = {
   },
 };
 
-Auth.init();
+// Wait for every script (Study, Manage, main.js…) to load before restoring the session.
+window.addEventListener('DOMContentLoaded', () => Auth.init());
