@@ -1,8 +1,8 @@
-// Study menu: opens when the player presses E near the desk.
-// States: "closed" → "classes" (pick a notebook) → "studying" (study tools)
+// Study menu — HTML overlay, opens when player presses E near the desk.
 const Study = {
-  state: "closed",
-  activeClass: null,
+  open: false,
+  selectedClass: null,
+  classes: [],
 
   _desk: { x: 570, y: 170, w: 100, h: 62 },
   _proximity: 80,
@@ -15,86 +15,86 @@ const Study = {
     return Math.abs(px - cx) < this._proximity && Math.abs(py - cy) < this._proximity;
   },
 
-  open() { this.state = "classes"; },
+  init() {
+    document.getElementById('study-overlay').addEventListener('click', e => {
+      if (e.target.id === 'study-overlay') this.close();
+    });
+  },
+
+  async openMenu() {
+    this.open = true;
+    document.getElementById('study-overlay').classList.remove('hidden');
+    const { data } = await DB.from('classes').select('*').order('name');
+    this.classes = data || [];
+    this._renderClasses();
+  },
 
   close() {
-    this.state = "closed";
-    this.activeClass = null;
+    this.open = false;
+    this.selectedClass = null;
+    document.getElementById('study-overlay').classList.add('hidden');
   },
 
-  _menuRect(img, canvas) {
-    const maxW = Math.min(canvas.width * 0.72, 680);
-    const scale = maxW / img.width;
-    const w = img.width * scale;
-    const h = img.height * scale;
-    return { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
+  get _panel() { return document.getElementById('study-panel'); },
+
+  _e(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   },
 
-  handleClick(cx, cy, canvas) {
-    if (this.state === "closed") return;
-
-    const key = this.state === "classes" ? "classoptions" : "studyoptions";
-    const img = Assets.get(key);
-    if (!img) return;
-
-    const r = this._menuRect(img, canvas);
-
-    // Click outside the menu closes it
-    if (cx < r.x || cx > r.x + r.w || cy < r.y || cy > r.y + r.h) {
-      this.close();
-      return;
-    }
-
-    if (this.state === "classes") {
-      const relX = cx - r.x;
-      if (relX < r.w / 3)       this.activeClass = "MIS 405";
-      else if (relX < r.w * 2/3) this.activeClass = "MIS 430";
-      else                        this.activeClass = "FI 302";
-      this.state = "studying";
-    }
+  _renderClasses() {
+    this._panel.innerHTML = `
+      <h2 class="panel-title">study</h2>
+      <ul class="panel-list">
+        ${this.classes.length
+          ? this.classes.map(c => `
+              <li class="panel-item" data-id="${this._e(c.id)}" data-name="${this._e(c.name)}">
+                ${this._e(c.name)}
+              </li>`).join('')
+          : '<li class="panel-item muted">No classes yet — add some in Manage</li>'}
+      </ul>
+    `;
+    this._panel.querySelectorAll('.panel-item[data-id]').forEach(el =>
+      el.addEventListener('click', () => {
+        this.selectedClass = { id: el.dataset.id, name: el.dataset.name };
+        this._renderOptions();
+      })
+    );
   },
 
-  // Call while camera transform is active so the prompt sits in world space above the desk.
+  _renderOptions() {
+    this._panel.innerHTML = `
+      <button class="panel-back" id="study-back">← back</button>
+      <h2 class="panel-title">${this._e(this.selectedClass.name)}</h2>
+      <ul class="panel-list">
+        <li class="panel-item" id="opt-book">Book</li>
+        <li class="panel-item" id="opt-flashcards">Flashcards</li>
+        <li class="panel-item" id="opt-quiz">Quiz</li>
+      </ul>
+    `;
+    document.getElementById('study-back').addEventListener('click', () => this._renderClasses());
+    // Study activities will be wired up in a later step
+  },
+
+  // Call while camera transform is active — draws "Press E" in world space above desk.
   drawPrompt(ctx) {
     const x  = this._desk.x + this._desk.w / 2;
     const y  = this._desk.y - 18;
     const label = "Press E";
-
     ctx.font = "bold 13px sans-serif";
     const tw = ctx.measureText(label).width;
     const pw = tw + 16;
     const ph = 20;
     const rx = x - pw / 2;
     const ry = y - ph;
-
     ctx.fillStyle = "rgba(255,182,193,0.92)";
     ctx.beginPath();
     ctx.roundRect(rx, ry, pw, ph, 6);
     ctx.fill();
-
     ctx.fillStyle = "#5a2030";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(label, x, ry + ph / 2);
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-  },
-
-  // Call after resetting the transform — draws in screen space.
-  draw(ctx, canvas) {
-    if (this.state === "closed") return;
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-    ctx.fillStyle = "rgba(0,0,0,0.52)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const key = this.state === "classes" ? "classoptions" : "studyoptions";
-    const img = Assets.get(key);
-    if (!img) return;
-
-    const r = this._menuRect(img, canvas);
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(img, r.x, r.y, r.w, r.h);
   },
 };

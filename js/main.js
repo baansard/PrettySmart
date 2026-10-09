@@ -9,7 +9,7 @@ function loop(time) {
   const dt = Math.min((time - lastTime) / 1000, 0.05); // seconds, capped so tab-switching doesn't teleport her
   lastTime = time;
 
-  if (Study.state === "closed" && !Manage.visible) Player.update(dt, Room.getSolids());
+  if (!Study.open && !Manage.visible) Player.update(dt, Room.getSolids());
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -20,7 +20,7 @@ function loop(time) {
   ctx.imageSmoothingEnabled = true;  // smooth when shrinking her sprite
   Player.draw(ctx);
 
-  if (Study.state === "closed" && Study.isNearDesk(Player)) Study.drawPrompt(ctx);
+  if (!Study.open && Study.isNearDesk(Player)) Study.drawPrompt(ctx);
 
   if (showHitboxes) {
     Room.drawHitboxes(ctx);
@@ -28,7 +28,6 @@ function loop(time) {
     ctx.strokeRect(Player.x, Player.y, Player.w, Player.h);
   }
 
-  Study.draw(ctx, canvas);   // resets transform internally, draws overlay in screen space
   PetShop.draw(ctx, canvas);
 
   requestAnimationFrame(loop);
@@ -41,8 +40,8 @@ async function start() {
 
   window.addEventListener("keydown", (e) => {
     if (e.key.toLowerCase() === "h") showHitboxes = !showHitboxes;
-    if (e.key.toLowerCase() === "e" && Study.state === "closed" && Study.isNearDesk(Player)) Study.open();
-    if (e.key === "Escape") { Study.close(); PetShop.close(); }
+    if (e.key.toLowerCase() === "e" && !Study.open && Study.isNearDesk(Player)) Study.openMenu();
+    if (e.key === "Escape") { Study.close(); PetShop.close(); Manage.hide(); }
   });
 
   canvas.addEventListener("click", (e) => {
@@ -52,7 +51,6 @@ async function start() {
     const cx = (e.clientX - rect.left) * scaleX;
     const cy = (e.clientY - rect.top) * scaleY;
     PetShop.handleClick(cx, cy, canvas);
-    Study.handleClick(cx, cy, canvas);
   });
 
   document.getElementById("pet-shop-btn").addEventListener("click", () => {
@@ -67,8 +65,6 @@ async function start() {
     Assets.load("avatar-up",       "assets/girlcharacter/avatar-back.png"),
     Assets.load("avatar-left",     "assets/girlcharacter/avatar-left.png"),
     Assets.load("avatar-right",    "assets/girlcharacter/avatar-right.png"),
-    Assets.load("classoptions",    "assets/studytools/classoptions.png"),
-    Assets.load("studyoptions",    "assets/studytools/studyoptions.png"),
     Assets.load("petshopmenu",     "assets/petshopmenu.png"),
     Assets.load("catfront",        "assets/cat/catfront.png"),
     Assets.load("drycatfood",      "assets/drycatfood.png"),

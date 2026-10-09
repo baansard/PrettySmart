@@ -22,6 +22,7 @@ const Auth = {
   },
 
   _ready() {
+    Study.init();
     Manage.init();
     start();
   },

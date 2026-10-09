@@ -115,16 +115,58 @@ const Manage = {
     );
   },
 
-  // ── Screen 3b: quiz questions ────────────────────────────────────────────
+  // ── Screen 3b: quiz questions (grouped by chapter) ───────────────────────
   async _renderQuiz() {
-    const { data: qs } = await DB.from('quiz_questions')
-      .select('*').eq('class_id', this.selectedClass.id).order('created_at');
+    const [{ data: chapters }, { data: qs }] = await Promise.all([
+      DB.from('chapters').select('id, title').eq('class_id', this.selectedClass.id).order('created_at'),
+      DB.from('quiz_questions')
+        .select('*, chapter:chapter_id(title)')
+        .eq('class_id', this.selectedClass.id)
+        .order('chapter_id', { ascending: true, nullsFirst: false })
+        .order('created_at'),
+    ]);
+
+    // Group questions by chapter
+    const groups = {};
+    (qs || []).forEach(q => {
+      const key   = q.chapter_id || '__none__';
+      const label = q.chapter?.title || 'Uncategorized';
+      if (!groups[key]) groups[key] = { label, items: [] };
+      groups[key].items.push(q);
+    });
+
+    const chapterSelect = (chapters || []).length ? `
+      <select class="panel-input" id="q-chapter">
+        <option value="">no chapter</option>
+        ${(chapters || []).map(c => `<option value="${this._e(c.id)}">${this._e(c.title)}</option>`).join('')}
+      </select>` : '';
+
+    const groupsHtml = Object.values(groups).map(g => `
+      <div class="q-group">
+        <div class="q-group-label">${this._e(g.label)}</div>
+        <ul class="panel-list">
+          ${g.items.map(q => `
+            <li class="panel-item q-item">
+              <div class="q-info">
+                <div class="q-text">${this._e(q.question)}</div>
+                <div class="q-meta">
+                  ${q.is_math ? 'type-in' : 'multiple choice'}
+                  ${q.question_type === 'multiple_choice' && q.choices
+                    ? ' · ' + q.choices.map((c,i) => `<span class="${c === q.correct_answer ? 'q-correct' : ''}">${String.fromCharCode(65+i)}) ${this._e(c)}</span>`).join('  ')
+                    : ' · answer: <span class="q-correct">' + this._e(q.correct_answer) + '</span>'}
+                </div>
+              </div>
+              <button class="del-btn" data-id="${q.id}">✕</button>
+            </li>`).join('')}
+        </ul>
+      </div>`).join('');
 
     this._panel.innerHTML = `
       <button class="panel-back" id="back">← back</button>
       <h2 class="panel-title">quiz questions · ${this._e(this.selectedClass.name)}</h2>
       <div class="panel-form">
         <textarea id="q-text" class="panel-textarea" placeholder="question"></textarea>
+        ${chapterSelect}
         <label class="panel-check"><input type="checkbox" id="q-math"> math / type-in answer</label>
         <div id="mc-fields">
           <input class="panel-input" id="q-a" placeholder="choice A" />
@@ -143,14 +185,9 @@ const Manage = {
         </div>
         <button class="panel-btn" id="q-save">save</button>
       </div>
-      <ul class="panel-list small">
-        ${(qs || []).map(q => `
-          <li class="panel-item row">
-            <span>${this._e(q.question)} <em class="muted">(${q.is_math ? 'type-in' : 'multiple choice'})</em></span>
-            <button class="del-btn" data-id="${q.id}">✕</button>
-          </li>`).join('')}
-      </ul>
+      ${groupsHtml || '<p class="muted" style="font-size:13px;padding:4px 0">No questions yet</p>'}
     `;
+
     this._on('back', () => this._renderContent());
     const mathCb = document.getElementById('q-math');
     mathCb.addEventListener('change', () => {
@@ -158,19 +195,21 @@ const Manage = {
       document.getElementById('ti-fields').classList.toggle('hidden', !mathCb.checked);
     });
     this._on('q-save', async () => {
-      const question = document.getElementById('q-text').value.trim();
+      const question   = document.getElementById('q-text').value.trim();
       if (!question) return;
+      const chapterEl  = document.getElementById('q-chapter');
+      const chapter_id = chapterEl?.value || null;
       let payload;
       if (mathCb.checked) {
         const answer = document.getElementById('q-ti-ans').value.trim();
         if (!answer) return;
-        payload = { class_id: this.selectedClass.id, question, question_type: 'type_in', is_math: true, correct_answer: answer };
+        payload = { class_id: this.selectedClass.id, question, question_type: 'type_in', is_math: true, correct_answer: answer, chapter_id: chapter_id || null };
       } else {
         const choices = ['q-a','q-b','q-c','q-d']
           .map(id => document.getElementById(id).value.trim()).filter(Boolean);
         if (choices.length < 2) return;
         const idx = Math.min(parseInt(document.getElementById('q-mc-ans').value), choices.length - 1);
-        payload = { class_id: this.selectedClass.id, question, question_type: 'multiple_choice', is_math: false, choices, correct_answer: choices[idx] };
+        payload = { class_id: this.selectedClass.id, question, question_type: 'multiple_choice', is_math: false, choices, correct_answer: choices[idx], chapter_id: chapter_id || null };
       }
       await DB.from('quiz_questions').insert(payload);
       this._renderQuiz();
@@ -220,7 +259,7 @@ const Manage = {
     );
   },
 
-  // ── Manage classes (add / delete) ────────────────────────────────────────
+  // ── Manage classes ───────────────────────────────────────────────────────
   async _renderManageClasses() {
     this._panel.innerHTML = `
       <button class="panel-back" id="back">← back</button>
