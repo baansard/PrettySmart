@@ -244,6 +244,9 @@ files into the app under `game/`), then deploys to Azure. If the tests fail, not
 
 ## 13. Roadmap / ideas
 
+The pet care system (requirements, stats, equipment, death) is planned in detail in
+[PET_CARE_DESIGN.md](PET_CARE_DESIGN.md).
+
 - Buy button in the pet shop (needs a purchases table; coins balance = earned − spent).
 - Flashcards and Book reading at the desk.
 - Move the Manage menu's direct Supabase calls behind the API.
