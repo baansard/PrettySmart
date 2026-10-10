@@ -10,4 +10,12 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
   </ItemGroup>
 
+  <!-- Bundle the browser game into the published app under game/ (see "GameRoot" in appsettings.json).
+       While developing, the server reads the files straight from the repo instead. -->
+  <ItemGroup>
+    <None Include="../../index.html;../../style.css" Link="game/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../js/**/*" Link="game/js/%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../assets/**/*" Exclude="../../assets/example*" Link="game/assets/%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
