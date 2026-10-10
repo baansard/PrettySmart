@@ -148,13 +148,21 @@ Each phase should be playable and committed on its own.
 
 ---
 
-## Open questions (decide before/while building)
+## Decisions (2026-10-10)
 
-1. **Pace:** how long can a pet survive with zero care? (~2–3 days = daily studying; ~1 week = forgiving)
-2. **Death:** permanent, or a way to save a sick pet (e.g. a vet that costs coins)?
-3. **Duplicates:** one of each cat? Many of the same fish? Does tank size cap how many fish?
-4. **Food:** stock up in quantities and use it up when feeding? (planned: yes)
-5. **Names:** can you rename pets you buy?
-6. **Studying bonus:** does studying at the desk itself boost pet happiness?
-7. **Art needed:** food bowl, water bowl, fountain, scratching post, tanks (sizes). Placeholders until drawn?
-8. **Where pets appear:** in the apartment right away (Phase 3), or just "owned" until then?
+1. **Pace:** a pet with **zero care** survives about **3–4 days** total (stats draining to 0, then sick, then death).
+   Tune drain rates so an average pet hits 0 in roughly 2–2.5 days and dies ~1–1.5 days after that;
+   hard pets (Carmy, Discus) faster, easy pets (Pleco) slower.
+2. **Death:** a dead pet can be **resurrected**, but it's **extremely expensive** — priced so it's
+   practically out of reach (e.g. many times the pet's own price). The pet stays in a "passed away" state
+   until then.
+3. **Equipment art:** the user will draw it (no placeholders needed long-term; use simple ones only while waiting).
+4. **Studying bonus:** **yes** — studying (e.g. answering quiz questions / time at the desk) gives owned pets
+   a happiness boost.
+
+## Still open
+
+1. **Duplicates:** one of each cat? Many of the same fish? Does tank size cap how many fish?
+2. **Food:** stock up in quantities and use it up when feeding? (planned: yes)
+3. **Names:** can you rename pets you buy?
+4. **Where pets appear:** in the apartment right away (Phase 3), or just "owned" until then?
