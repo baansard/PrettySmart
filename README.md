@@ -4,6 +4,8 @@ A cozy study game: walk around your apartment, sit at your desk, and study your 
 
 ## Architecture
 
+Full notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ```
 Browser game (HTML canvas + JS)  →  C# Web API (ASP.NET Core 10)  →  Supabase (Postgres + Auth)
 ```
