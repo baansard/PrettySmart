@@ -4,8 +4,8 @@ const Study = {
   selectedClass: null,
   classes: [],
 
-  _desk: { x: 570, y: 170, w: 100, h: 62 },
-  _proximity: 80,
+  _desk: { x: 797, y: 160, w: 72, h: 30 },
+  _proximity: 52,
 
   isNearDesk(player) {
     const px = player.x + player.w / 2;
@@ -258,17 +258,17 @@ const Study = {
   // Call while camera transform is active — draws "Press E" in world space above desk.
   drawPrompt(ctx) {
     const x  = this._desk.x + this._desk.w / 2;
-    const y  = this._desk.y - 18;
+    const y  = this._desk.y - 10;
     const label = "Press E";
-    ctx.font = "bold 13px sans-serif";
+    ctx.font = "bold 9px sans-serif";
     const tw = ctx.measureText(label).width;
-    const pw = tw + 16;
-    const ph = 20;
+    const pw = tw + 10;
+    const ph = 14;
     const rx = x - pw / 2;
     const ry = y - ph;
     ctx.fillStyle = "rgba(255,182,193,0.92)";
     ctx.beginPath();
-    ctx.roundRect(rx, ry, pw, ph, 6);
+    ctx.roundRect(rx, ry, pw, ph, 4);
     ctx.fill();
     ctx.fillStyle = "#5a2030";
     ctx.textAlign = "center";

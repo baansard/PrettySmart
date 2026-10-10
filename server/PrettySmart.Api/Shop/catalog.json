@@ -133,20 +133,20 @@
     "id": "bingus",
     "kind": "cat",
     "name": "Bingus",
-    "type": "Orange tabby",
-    "price": 900,
-    "description": "One brain cell. Uses it wisely.",
-    "personality": ["silly", "loud", "hungry"],
+    "type": "Domestic Shorthair",
+    "price": 800,
+    "description": "A natural killer...",
+    "personality": ["silly", "nonchalant", "hungry"],
     "care": 2
   },
   {
     "id": "felix",
     "kind": "cat",
     "name": "Felix",
-    "type": "Maine Coon",
-    "price": 1500,
-    "description": "More floof than cat.",
-    "personality": ["fluffy", "gentle", "regal"],
+    "type": "Domestic Longhair",
+    "price": 1000,
+    "description": "Found on street",
+    "personality": ["calm", "gentle", "patient"],
     "care": 3
   },
   {
@@ -154,9 +154,9 @@
     "kind": "cat",
     "name": "Sphynx",
     "type": "Sphynx",
-    "price": 1200,
-    "description": "Forgot to put on a sweater.",
-    "personality": ["clingy", "warm", "dramatic"],
+    "price": 500,
+    "description": "Reminds me of the chicken I cooked earlier!",
+    "personality": ["clingy", "weird", "dramatic"],
     "care": 3
   },
   {

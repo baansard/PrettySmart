@@ -55,6 +55,7 @@ const Manage = {
     this._panel.querySelectorAll('.panel-item[data-id]').forEach(el =>
       el.addEventListener('click', () => {
         this.selectedClass = { id: el.dataset.id, name: el.dataset.name };
+        this._lastChapter = null;
         this._renderContent();
       })
     );
@@ -67,9 +68,9 @@ const Manage = {
       <button class="panel-back" id="back">← back</button>
       <h2 class="panel-title">${this._e(this.selectedClass.name)}</h2>
       <ul class="panel-list">
-        <li class="panel-item" id="go-fc">add flashcards</li>
-        <li class="panel-item" id="go-quiz">add quiz questions</li>
-        <li class="panel-item" id="go-ch">add book chapters / text</li>
+        <li class="panel-item" id="go-fc">flashcards</li>
+        <li class="panel-item" id="go-quiz">quiz questions</li>
+        <li class="panel-item" id="go-ch">book chapters / text</li>
       </ul>
     `;
     this._on('back',    () => this._renderClasses());
@@ -78,10 +79,44 @@ const Manage = {
     this._on('go-ch',   () => this._renderChapters());
   },
 
-  // ── Screen 3a: flashcards ────────────────────────────────────────────────
+  // Chapters for the selected class, in the order they were added.
+  async _loadChapters() {
+    const { data } = await DB.from('chapters').select('id, title').eq('class_id', this.selectedClass.id).order('id');
+    return data || [];
+  },
+
+  // Chapter picker for the add forms. Remembers the last chapter used.
+  _chapterSelect(id, chapters) {
+    if (!chapters.length) return '';
+    const last = String(this._lastChapter ?? '');
+    return `
+      <select class="panel-input" id="${id}">
+        <option value="">no chapter</option>
+        ${chapters.map(c => `<option value="${this._e(c.id)}" ${String(c.id) === last ? 'selected' : ''}>${this._e(c.title)}</option>`).join('')}
+      </select>`;
+  },
+
+  // Groups items under their chapter (in chapter order, "No chapter" last).
+  // renderItem(item) returns the <li> for one item.
+  _chapterGroups(items, chapters, renderItem, emptyText) {
+    const groups = chapters.map(c => ({ label: c.title, items: items.filter(i => String(i.chapter_id) === String(c.id)) }));
+    const known = new Set(chapters.map(c => String(c.id)));
+    groups.push({ label: 'No chapter', items: items.filter(i => i.chapter_id == null || !known.has(String(i.chapter_id))) });
+
+    const html = groups.filter(g => g.items.length).map(g => `
+      <div class="q-group">
+        <div class="q-group-label">${this._e(g.label)} <span class="q-count">${g.items.length}</span></div>
+        <ul class="panel-list">${g.items.map(renderItem).join('')}</ul>
+      </div>`).join('');
+    return html || `<p class="muted" style="font-size:13px;padding:4px 0">${emptyText}</p>`;
+  },
+
+  // ── Screen 3a: flashcards (grouped by chapter) ───────────────────────────
   async _renderFlashcards() {
-    const { data: cards } = await DB.from('flashcards')
-      .select('*').eq('class_id', this.selectedClass.id).order('id');
+    const [chapters, { data: cards }] = await Promise.all([
+      this._loadChapters(),
+      DB.from('flashcards').select('*').eq('class_id', this.selectedClass.id).order('id'),
+    ]);
 
     this._panel.innerHTML = `
       <button class="panel-back" id="back">← back</button>
@@ -89,22 +124,30 @@ const Manage = {
       <div class="panel-form">
         <input id="fc-term" class="panel-input" placeholder="term" />
         <textarea id="fc-def" class="panel-textarea" placeholder="definition"></textarea>
+        ${this._chapterSelect('fc-chapter', chapters)}
         <button class="panel-btn" id="fc-save">save</button>
+        <p class="auth-error" id="fc-error"></p>
       </div>
-      <ul class="panel-list small">
-        ${(cards || []).map(c => `
-          <li class="panel-item row">
-            <span><b>${this._e(c.term)}</b> — ${this._e(c.definition)}</span>
-            <button class="del-btn" data-id="${c.id}">✕</button>
-          </li>`).join('')}
-      </ul>
+      ${this._chapterGroups(cards || [], chapters, c => `
+        <li class="panel-item row small">
+          <span><b>${this._e(c.term)}</b> — ${this._e(c.definition)}</span>
+          <button class="del-btn" data-id="${c.id}">✕</button>
+        </li>`, 'No flashcards yet')}
     `;
     this._on('back', () => this._renderContent());
     this._on('fc-save', async () => {
       const term = document.getElementById('fc-term').value.trim();
       const def  = document.getElementById('fc-def').value.trim();
       if (!term || !def) return;
-      await DB.from('flashcards').insert({ class_id: this.selectedClass.id, term, definition: def });
+      const chapter_id = document.getElementById('fc-chapter')?.value || null;
+      this._lastChapter = chapter_id;
+      const { error } = await DB.from('flashcards').insert({ class_id: this.selectedClass.id, term, definition: def, chapter_id });
+      if (error) {
+        document.getElementById('fc-error').textContent = error.message.includes('chapter_id')
+          ? 'Flashcard chapters need a one-time database update (server/sql/002_flashcard_chapters.sql).'
+          : error.message;
+        return;
+      }
       this._renderFlashcards();
     });
     this._panel.querySelectorAll('.del-btn').forEach(b =>
@@ -117,49 +160,26 @@ const Manage = {
 
   // ── Screen 3b: quiz questions (grouped by chapter) ───────────────────────
   async _renderQuiz() {
-    const [{ data: chapters }, { data: qs }] = await Promise.all([
-      DB.from('chapters').select('id, title').eq('class_id', this.selectedClass.id).order('id'),
-      DB.from('quiz_questions')
-        .select('*, chapter:chapter_id(title)')
-        .eq('class_id', this.selectedClass.id)
-        .order('chapter_id', { ascending: true, nullsFirst: false })
-        .order('id'),
+    const [chapters, { data: qs }] = await Promise.all([
+      this._loadChapters(),
+      DB.from('quiz_questions').select('*').eq('class_id', this.selectedClass.id).order('id'),
     ]);
 
-    // Group questions by chapter
-    const groups = {};
-    (qs || []).forEach(q => {
-      const key   = q.chapter_id || '__none__';
-      const label = q.chapter?.title || 'Uncategorized';
-      if (!groups[key]) groups[key] = { label, items: [] };
-      groups[key].items.push(q);
-    });
+    const chapterSelect = this._chapterSelect('q-chapter', chapters);
 
-    const chapterSelect = (chapters || []).length ? `
-      <select class="panel-input" id="q-chapter">
-        <option value="">no chapter</option>
-        ${(chapters || []).map(c => `<option value="${this._e(c.id)}">${this._e(c.title)}</option>`).join('')}
-      </select>` : '';
-
-    const groupsHtml = Object.values(groups).map(g => `
-      <div class="q-group">
-        <div class="q-group-label">${this._e(g.label)}</div>
-        <ul class="panel-list">
-          ${g.items.map(q => `
-            <li class="panel-item q-item">
-              <div class="q-info">
-                <div class="q-text">${this._e(q.question)}</div>
-                <div class="q-meta">
-                  ${q.is_math ? 'type-in' : 'multiple choice'}
-                  ${q.question_type === 'multiple_choice' && q.choices
-                    ? ' · ' + q.choices.map((c,i) => `<span class="${c === q.correct_answer ? 'q-correct' : ''}">${String.fromCharCode(65+i)}) ${this._e(c)}</span>`).join('  ')
-                    : ' · answer: <span class="q-correct">' + this._e(q.correct_answer) + '</span>'}
-                </div>
-              </div>
-              <button class="del-btn" data-id="${q.id}">✕</button>
-            </li>`).join('')}
-        </ul>
-      </div>`).join('');
+    const groupsHtml = this._chapterGroups(qs || [], chapters, q => `
+      <li class="panel-item q-item">
+        <div class="q-info">
+          <div class="q-text">${this._e(q.question)}</div>
+          <div class="q-meta">
+            ${q.is_math ? 'type-in' : 'multiple choice'}
+            ${q.question_type === 'multiple_choice' && q.choices
+              ? ' · ' + q.choices.map((c,i) => `<span class="${c === q.correct_answer ? 'q-correct' : ''}">${String.fromCharCode(65+i)}) ${this._e(c)}</span>`).join('  ')
+              : ' · answer: <span class="q-correct">' + this._e(q.correct_answer) + '</span>'}
+          </div>
+        </div>
+        <button class="del-btn" data-id="${q.id}">✕</button>
+      </li>`, 'No questions yet');
 
     this._panel.innerHTML = `
       <button class="panel-back" id="back">← back</button>
@@ -185,7 +205,7 @@ const Manage = {
         </div>
         <button class="panel-btn" id="q-save">save</button>
       </div>
-      ${groupsHtml || '<p class="muted" style="font-size:13px;padding:4px 0">No questions yet</p>'}
+      ${groupsHtml}
     `;
 
     this._on('back', () => this._renderContent());
@@ -199,6 +219,7 @@ const Manage = {
       if (!question) return;
       const chapterEl  = document.getElementById('q-chapter');
       const chapter_id = chapterEl?.value || null;
+      this._lastChapter = chapter_id;
       let payload;
       if (mathCb.checked) {
         const answer = document.getElementById('q-ti-ans').value.trim();

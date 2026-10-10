@@ -1,12 +1,12 @@
 // The avatar: position, WASD movement and wall/furniture collision.
 // x/y/w/h is her FEET hitbox, so she can stand in front of things naturally.
 const Player = {
-  x: 740,
-  y: 400,
-  w: 22,
-  h: 10,
-  speed: 90,        // apartment pixels per second
-  spriteHeight: 72, // how tall she's drawn, in apartment pixels
+  x: 915,
+  y: 300,
+  w: 15,
+  h: 7,
+  speed: 62,        // apartment pixels per second
+  spriteHeight: 48, // how tall she's drawn, in apartment pixels
   facing: "down",
   moving: false,
   walkTime: 0,
@@ -61,12 +61,12 @@ const Player = {
     const sh = this.spriteHeight;
 
     // Little hop while walking
-    const bob = this.moving ? Math.abs(Math.sin(this.walkTime * 12)) * 2.5 : 0;
+    const bob = this.moving ? Math.abs(Math.sin(this.walkTime * 12)) * 1.7 : 0;
 
     // Soft shadow under her feet
     ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
     ctx.beginPath();
-    ctx.ellipse(this.x + this.w / 2, this.y + this.h - 2, sw * 0.32, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(this.x + this.w / 2, this.y + this.h - 2, sw * 0.32, 3, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.drawImage(sprite, this.x + this.w / 2 - sw / 2, this.y + this.h - sh - bob, sw, sh);
