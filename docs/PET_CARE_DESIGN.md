@@ -160,9 +160,14 @@ Each phase should be playable and committed on its own.
 4. **Studying bonus:** **yes** — studying (e.g. answering quiz questions / time at the desk) gives owned pets
    a happiness boost.
 
+5. **Duplicates:** you can own **many of each cat** and **many of each fish**. Owned pets should be nameable so
+   they can be told apart.
+
 ## Still open
 
-1. **Duplicates:** one of each cat? Many of the same fish? Does tank size cap how many fish?
+1. **Sharing & capacity (proposed defaults, not yet confirmed):** one set of cat equipment (food bowl, water
+   bowl/fountain, scratching post) covers **2 cats**; tanks limit fish by "space" (10-gallon ≈ 6 small fish,
+   20-gallon ≈ 12 small or a couple of large like discus). All numbers in `catalog.json`.
 2. **Food:** stock up in quantities and use it up when feeding? (planned: yes)
 3. **Names:** can you rename pets you buy?
 4. **Where pets appear:** in the apartment right away (Phase 3), or just "owned" until then?
