@@ -163,11 +163,16 @@ Each phase should be playable and committed on its own.
 5. **Duplicates:** you can own **many of each cat** and **many of each fish**. Owned pets should be nameable so
    they can be told apart.
 
+6. **Cats share equipment:** one food bowl, one water bowl/fountain and one scratching post cover **2 cats**.
+   A 3rd cat requires another set. More cats also **use up food faster**.
+7. **Food tiers:** more expensive food **lasts longer** (more servings per purchase and/or refills hunger more).
+8. **Tank limit:** at most **2 tanks** until a future **house expansion** purchase raises the limit
+   (expansion planned for later — not part of the first phases).
+
 ## Still open
 
-1. **Sharing & capacity (proposed defaults, not yet confirmed):** one set of cat equipment (food bowl, water
-   bowl/fountain, scratching post) covers **2 cats**; tanks limit fish by "space" (10-gallon ≈ 6 small fish,
-   20-gallon ≈ 12 small or a couple of large like discus). All numbers in `catalog.json`.
+1. **Fish capacity:** whether tank size limits how many fish (e.g. "space" per fish, 10-gallon ≈ 6 small fish)
+   is **undecided**. Until decided, a fish just needs at least one suitable tank.
 2. **Food:** stock up in quantities and use it up when feeding? (planned: yes)
 3. **Names:** can you rename pets you buy?
 4. **Where pets appear:** in the apartment right away (Phase 3), or just "owned" until then?
