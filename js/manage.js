@@ -56,6 +56,7 @@ const Manage = {
       el.addEventListener('click', () => {
         this.selectedClass = { id: el.dataset.id, name: el.dataset.name };
         this._lastChapter = null;
+        this._ai = null;
         this._renderContent();
       })
     );
@@ -71,12 +72,14 @@ const Manage = {
         <li class="panel-item" id="go-fc">flashcards</li>
         <li class="panel-item" id="go-quiz">quiz questions</li>
         <li class="panel-item" id="go-ch">book chapters / text</li>
+        <li class="panel-item" id="go-ai">generate with AI</li>
       </ul>
     `;
     this._on('back',    () => this._renderClasses());
     this._on('go-fc',   () => this._renderFlashcards());
     this._on('go-quiz', () => this._renderQuiz());
     this._on('go-ch',   () => this._renderChapters());
+    this._on('go-ai',   () => this._renderAi());
   },
 
   // Chapters for the selected class, in the order they were added.
@@ -241,6 +244,178 @@ const Manage = {
         this._renderQuiz();
       })
     );
+  },
+
+  // ── Screen 3d: generate study material with AI ───────────────────────────
+  // Paste any text → choose how many of each → review/edit drafts → save into a chapter.
+  async _renderAi() {
+    const chapters = await this._loadChapters();
+    const ai = this._ai ??= { text: '', mc: 5, typeIn: 0, cards: 10, drafts: null };
+
+    this._panel.innerHTML = `
+      <button class="panel-back" id="back">← back</button>
+      <h2 class="panel-title">generate with AI · ${this._e(this.selectedClass.name)}</h2>
+      <div class="panel-form">
+        <textarea id="ai-text" class="panel-textarea tall" placeholder="paste notes, a chapter, slide text…">${this._e(ai.text)}</textarea>
+        <small class="ai-count" id="ai-count"></small>
+        <div class="ai-nums">
+          <label>multiple choice<input type="number" class="panel-input" id="ai-mc" min="0" max="30" value="${ai.mc}"></label>
+          <label>type-in<input type="number" class="panel-input" id="ai-typein" min="0" max="30" value="${ai.typeIn}"></label>
+          <label>flashcards<input type="number" class="panel-input" id="ai-cards" min="0" max="30" value="${ai.cards}"></label>
+        </div>
+        <button class="panel-btn" id="ai-go">generate</button>
+        <p class="ai-status" id="ai-status"></p>
+      </div>
+      <div id="ai-drafts"></div>
+    `;
+    this._on('back', () => this._renderContent());
+
+    const text = document.getElementById('ai-text');
+    const count = () => {
+      document.getElementById('ai-count').textContent = `${text.value.length.toLocaleString()} / 60,000 characters`;
+      ai.text = text.value;
+    };
+    text.addEventListener('input', count);
+    count();
+
+    this._on('ai-go', () => this._generate(chapters));
+    if (ai.drafts) this._renderDrafts(chapters);
+  },
+
+  async _generate(chapters) {
+    const ai = this._ai;
+    const num = id => Math.max(0, Math.min(30, parseInt(document.getElementById(id).value, 10) || 0));
+    ai.mc = num('ai-mc'); ai.typeIn = num('ai-typein'); ai.cards = num('ai-cards');
+
+    const status = document.getElementById('ai-status');
+    const btn = document.getElementById('ai-go');
+    btn.disabled = true;
+    btn.textContent = 'generating…';
+    status.textContent = 'This can take up to a minute for long text.';
+    status.className = 'ai-status';
+
+    const res = await Api.send('POST', '/ai/generate', {
+      text: ai.text, multipleChoice: ai.mc, typeIn: ai.typeIn, flashcards: ai.cards,
+    });
+
+    if (!document.getElementById('ai-go')) return; // left the screen while waiting
+    btn.disabled = false;
+    btn.textContent = 'generate again';
+    if (!res.ok) {
+      status.textContent = res.data?.detail ?? 'Something went wrong. Try again?';
+      status.className = 'ai-status bad';
+      return;
+    }
+    ai.drafts = res.data;
+    const made = ai.drafts.questions.length + ai.drafts.flashcards.length;
+    status.textContent = made ? 'Review and edit below, then save the ones you want.' : 'The AI didn\'t find enough to make anything. Try more text?';
+    this._renderDrafts(chapters);
+  },
+
+  // Editable drafts. Nothing is saved until "save".
+  _renderDrafts(chapters) {
+    const ai = this._ai;
+    const box = document.getElementById('ai-drafts');
+    const e = s => this._e(s);
+    const { questions, flashcards } = ai.drafts;
+    if (!questions.length && !flashcards.length) { box.innerHTML = ''; return; }
+
+    const letters = ['A', 'B', 'C', 'D'];
+    const questionHtml = (q, i) => `
+      <li class="panel-item ai-draft" data-q="${i}">
+        <button class="del-btn ai-remove" title="remove">✕</button>
+        <textarea class="panel-textarea ai-q">${e(q.question)}</textarea>
+        ${q.type === 'multiple_choice'
+          ? q.choices.map((c, j) => `
+            <label class="ai-choice">
+              <input type="radio" name="ai-correct-${i}" value="${j}" ${c === q.correctAnswer ? 'checked' : ''} title="correct answer">
+              <span>${letters[j]}</span>
+              <input class="panel-input ai-c" value="${e(c)}">
+            </label>`).join('')
+          : `<label class="ai-choice"><span>answer</span><input class="panel-input ai-a" value="${e(q.correctAnswer)}"></label>`}
+        <small class="q-meta">${q.type === 'multiple_choice' ? 'multiple choice · pick the correct one' : 'type-in'}</small>
+      </li>`;
+
+    const cardHtml = (f, i) => `
+      <li class="panel-item ai-draft" data-f="${i}">
+        <button class="del-btn ai-remove" title="remove">✕</button>
+        <input class="panel-input ai-term" value="${e(f.term)}">
+        <textarea class="panel-textarea ai-def">${e(f.definition)}</textarea>
+      </li>`;
+
+    box.innerHTML = `
+      ${questions.length ? `
+        <div class="q-group">
+          <div class="q-group-label">quiz questions <span class="q-count">${questions.length}</span></div>
+          <ul class="panel-list">${questions.map(questionHtml).join('')}</ul>
+        </div>` : ''}
+      ${flashcards.length ? `
+        <div class="q-group">
+          <div class="q-group-label">flashcards <span class="q-count">${flashcards.length}</span></div>
+          <ul class="panel-list">${flashcards.map(cardHtml).join('')}</ul>
+        </div>` : ''}
+      <div class="panel-form ai-save">
+        <label class="ai-into">save into ${this._chapterSelect('ai-chapter', chapters) || '<span class="muted">(no chapters yet)</span>'}</label>
+        <button class="panel-btn" id="ai-save">save ${questions.length + flashcards.length} items</button>
+        <p class="ai-status" id="ai-save-status"></p>
+      </div>
+    `;
+
+    box.querySelectorAll('.ai-remove').forEach(b => b.addEventListener('click', () => {
+      this._collectDrafts();
+      const li = b.closest('.ai-draft');
+      if (li.dataset.q !== undefined) ai.drafts.questions.splice(+li.dataset.q, 1);
+      else ai.drafts.flashcards.splice(+li.dataset.f, 1);
+      this._renderDrafts(chapters);
+    }));
+    this._on('ai-save', () => this._saveDrafts(chapters));
+  },
+
+  // Reads any edits from the draft inputs back into this._ai.drafts.
+  _collectDrafts() {
+    const box = document.getElementById('ai-drafts');
+    const { questions, flashcards } = this._ai.drafts;
+    box.querySelectorAll('[data-q]').forEach(li => {
+      const q = questions[+li.dataset.q];
+      q.question = li.querySelector('.ai-q').value;
+      if (q.type === 'multiple_choice') {
+        q.choices = [...li.querySelectorAll('.ai-c')].map(i => i.value);
+        const picked = li.querySelector('input[type=radio]:checked');
+        q.correctAnswer = picked ? q.choices[+picked.value] : '';
+      } else {
+        q.correctAnswer = li.querySelector('.ai-a').value;
+      }
+    });
+    box.querySelectorAll('[data-f]').forEach(li => {
+      const f = flashcards[+li.dataset.f];
+      f.term = li.querySelector('.ai-term').value;
+      f.definition = li.querySelector('.ai-def').value;
+    });
+  },
+
+  async _saveDrafts(chapters) {
+    this._collectDrafts();
+    const chapterId = document.getElementById('ai-chapter')?.value || null;
+    this._lastChapter = chapterId;
+    const status = document.getElementById('ai-save-status');
+    status.textContent = 'saving…';
+    status.className = 'ai-status';
+
+    const res = await Api.send('POST', '/ai/save', {
+      classId: this.selectedClass.id, chapterId,
+      questions: this._ai.drafts.questions, flashcards: this._ai.drafts.flashcards,
+    });
+    if (!res.ok) {
+      status.textContent = res.data?.detail ?? 'Couldn\'t save. Try again?';
+      status.className = 'ai-status bad';
+      return;
+    }
+    const where = chapterId ? chapters.find(c => String(c.id) === String(chapterId))?.title : 'No chapter';
+    this._ai.drafts = null;
+    this._renderDrafts(chapters);
+    const top = document.getElementById('ai-status');
+    top.textContent = `Saved ${res.data.questions} questions and ${res.data.flashcards} flashcards to ${where}.`;
+    top.className = 'ai-status good';
   },
 
   // ── Screen 3c: chapters ──────────────────────────────────────────────────

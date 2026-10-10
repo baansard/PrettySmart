@@ -64,6 +64,8 @@ dotnet test
 | POST   | `/api/shop/buy`      | Buy `{ itemId }` (price from the catalog, balance checked in the database) |
 | GET    | `/api/me`            | Your coins, pets and inventory |
 | PATCH  | `/api/pets/{id}`     | Name a pet `{ nickname }` |
+| POST   | `/api/ai/generate`   | Pasted text → draft quiz questions/flashcards `{ text, multipleChoice, typeIn, flashcards }` (OpenAI) |
+| POST   | `/api/ai/save`       | Save reviewed drafts into a class/chapter |
 
 ## Controls
 

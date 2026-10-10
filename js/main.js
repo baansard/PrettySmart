@@ -39,6 +39,8 @@ async function start() {
   window.addEventListener("resize", () => Camera.resize(canvas));
 
   window.addEventListener("keydown", (e) => {
+    // Typing in a text box shouldn't walk, open the desk, or toggle hitboxes (Esc still closes menus).
+    if (e.key !== "Escape" && e.target.matches?.("input, textarea, select")) return;
     if (e.key.toLowerCase() === "h") showHitboxes = !showHitboxes;
     if (e.key.toLowerCase() === "e" && !Study.open && Study.isNearDesk(Player)) Study.openMenu();
     if (e.key === "Escape") {

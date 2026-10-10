@@ -24,6 +24,13 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<SupabaseRest>();
 builder.Services.AddHttpClient<SupabaseAdmin>();
+
+// AI study material (OpenAI). The key comes from user-secrets / Azure settings, never appsettings.json.
+builder.Services.AddOptions<PrettySmart.Api.Ai.OpenAiOptions>().BindConfiguration(PrettySmart.Api.Ai.OpenAiOptions.Section);
+builder.Services.AddHttpClient<PrettySmart.Api.Ai.OpenAiClient>(c => c.Timeout = TimeSpan.FromMinutes(3));
+builder.Services.AddScoped<PrettySmart.Api.Ai.StudyGenerator>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<PrettySmart.Api.Ai.AiUsageLimiter>();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(sp => new PrettySmart.Api.Shop.ShopCatalog(
     Path.Combine(builder.Environment.ContentRootPath, "Shop", "catalog.json"),
@@ -73,6 +80,7 @@ app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 app.MapClassEndpoints();
 app.MapQuizEndpoints();
 app.MapShopEndpoints();
+app.MapAiEndpoints();
 
 app.Run();
 

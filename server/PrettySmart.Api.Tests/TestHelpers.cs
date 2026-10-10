@@ -14,14 +14,21 @@ namespace PrettySmart.Api.Tests;
 public static class TestHelpers
 {
     /// <summary>A client signed in as user-1 whose Supabase calls go to <paramref name="supabase"/>.</summary>
-    public static HttpClient SignedInClient(this WebApplicationFactory<Program> factory, FakeSupabase supabase)
+    public static HttpClient SignedInClient(this WebApplicationFactory<Program> factory, FakeSupabase supabase,
+        HttpMessageHandler? openAi = null, int aiDailyLimit = 25)
     {
-        var client = factory.WithWebHostBuilder(b => b.UseSetting("Supabase:SecretKey", "sb_secret_test").ConfigureTestServices(services =>
+        var client = factory.WithWebHostBuilder(b => b
+            .UseSetting("Supabase:SecretKey", "sb_secret_test")
+            .UseSetting("OpenAI:ApiKey", openAi is null ? "" : "sk-test")
+            .UseSetting("OpenAI:DailyLimit", aiDailyLimit.ToString())
+            .ConfigureTestServices(services =>
         {
             services.AddAuthentication(TestAuth.Name)
                 .AddScheme<AuthenticationSchemeOptions, TestAuth>(TestAuth.Name, _ => { });
             services.AddHttpClient<SupabaseRest>().ConfigurePrimaryHttpMessageHandler(() => supabase);
             services.AddHttpClient<SupabaseAdmin>().ConfigurePrimaryHttpMessageHandler(() => supabase);
+            if (openAi is not null)
+                services.AddHttpClient<PrettySmart.Api.Ai.OpenAiClient>().ConfigurePrimaryHttpMessageHandler(() => openAi);
         })).CreateClient();
         client.DefaultRequestHeaders.Authorization = new("Bearer", "test-token");
         return client;

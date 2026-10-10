@@ -482,6 +482,45 @@ canvas {
 }
 .mp-status.dead { background: #e0d4da; color: #6b4a59; }
 
+/* ── Generate with AI (Manage) ───────────────────────────────────────────── */
+#manage-panel { max-width: calc(100vw - 32px); }
+
+.ai-count { font-size: 11px; color: #b07090; text-align: right; margin-top: -6px; }
+
+.ai-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ai-nums label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #c2185b;
+}
+.ai-nums .panel-input { width: 100%; }
+
+.ai-status { font-size: 13px; color: #a0607e; min-height: 1em; }
+.ai-status.bad  { color: #c62828; }
+.ai-status.good { color: #2e7d32; font-weight: bold; }
+
+.ai-draft {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: default;
+  padding-right: 36px;
+}
+.ai-draft:hover { background: rgba(255,255,255,0.6); }
+.ai-draft .panel-textarea { min-height: 56px; }
+.ai-remove { position: absolute; top: 8px; right: 8px; }
+
+.ai-choice { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: bold; color: #c2185b; }
+.ai-choice .panel-input { flex: 1; min-width: 0; padding: 6px 10px; font-size: 13px; }
+.ai-choice input[type=radio] { accent-color: #2e7d32; width: 16px; height: 16px; }
+
+.ai-save { border-top: 2px dashed #f8bbd0; padding-top: 14px; }
+.ai-into { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: bold; color: #c2185b; }
+
 /* ── Hint ────────────────────────────────────────────────────────────────── */
 .hint {
   position: fixed;

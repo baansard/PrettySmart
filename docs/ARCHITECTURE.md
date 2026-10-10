@@ -146,6 +146,12 @@ All require a logged-in user except `/api/health`.
 | POST | `/api/quiz/answers` | Grade `{ questionId, answer }`, record it, award points |
 | GET | `/api/quiz/points`, `/api/coins` | Total coins |
 | GET | `/api/shop/items`, `/api/shop/items/{id}` | Pet shop catalog |
+| GET | `/api/shop/check/{id}` | Can you buy it? Requirement checklist + reason |
+| POST | `/api/shop/buy` | Buy `{ itemId }` |
+| GET | `/api/me` | Your coins, pets and inventory |
+| PATCH | `/api/pets/{id}` | Name a pet |
+| POST | `/api/ai/generate` | Pasted text → draft questions/flashcards via OpenAI (strict JSON schema, cleaned, daily limit) |
+| POST | `/api/ai/save` | Save reviewed drafts into a class/chapter (as the user, so RLS checks ownership) |
 
 **Grading rules** (`Quiz/QuizGrader.cs`): case-insensitive, trims and collapses spaces. For math/type-in
 questions, numbers are compared numerically, so `1,000`, `$1000` and `1000.0` all match `1000`.
@@ -207,7 +213,8 @@ which is drawn on the canvas with click hit-testing.
 | Supabase **secret** key (server-only, bypasses RLS) | .NET user-secrets locally (`Supabase:SecretKey`); Azure App Service → Environment variables (`Supabase__SecretKey`) | **Yes** — never in JS, appsettings.json or the repo |
 | Azure deploy credentials | GitHub secret `AZURE_WEBAPP_PUBLISH_PROFILE` | **Yes** — never commit or paste it |
 | Azure app name | GitHub variable `AZURE_WEBAPP_NAME` (`PrettySmartStudy`) | No |
-| Future AI API key (OpenAI etc.) | Should go in Azure App Service → Configuration (environment variable) | **Yes** — never in JS or the repo |
+| OpenAI API key | .NET user-secrets locally (`OpenAI:ApiKey`); Azure App Service → Environment variables (`OpenAI__ApiKey`) | **Yes** — never in JS or the repo |
+| OpenAI model / daily limit | `OpenAI:Model`, `OpenAI:DailyLimit` (default 25 generations per player per day) | No |
 
 The server only exposes `/`, `index.html`, `style.css`, `js/`, `assets/` and `/api/`. Server code, config files
 and `.git` return 404.
@@ -256,5 +263,4 @@ The pet care system (requirements, stats, equipment, death) is planned in detail
 - Buy button in the pet shop (needs a purchases table; coins balance = earned − spent).
 - Flashcards and Book reading at the desk.
 - Move the Manage menu's direct Supabase calls behind the API.
-- AI-generated quiz questions/flashcards from chapter text (API key on the server, review-before-save).
 - Use the cats' side/sleep sprites for a pet that walks around the room.
