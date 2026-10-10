@@ -325,7 +325,8 @@ const Manage = {
     const ai = this._ai;
     const box = document.getElementById('ai-drafts');
     const e = s => this._e(s);
-    const { questions, flashcards } = ai.drafts;
+    if (!box) return;
+    const { questions = [], flashcards = [] } = ai.drafts ?? {}; // drafts are cleared after saving
     if (!questions.length && !flashcards.length) { box.innerHTML = ''; return; }
 
     const letters = ['A', 'B', 'C', 'D'];
@@ -406,6 +407,8 @@ const Manage = {
     const chapterId = document.getElementById('ai-chapter')?.value || null;
     this._lastChapter = chapterId;
     const status = document.getElementById('ai-save-status');
+    const saveBtn = document.getElementById('ai-save');
+    saveBtn.disabled = true; // no double saves
     status.textContent = 'saving…';
     status.className = 'ai-status';
 
@@ -416,6 +419,7 @@ const Manage = {
     if (!res.ok) {
       status.textContent = res.data?.detail ?? 'Couldn\'t save. Try again?';
       status.className = 'ai-status bad';
+      saveBtn.disabled = false;
       return;
     }
     const where = chapterId ? chapters.find(c => String(c.id) === String(chapterId))?.title : 'No chapter';
