@@ -1,5 +1,5 @@
 // The apartment: background art plus invisible blocks she can't walk through.
-// All numbers are pixel coordinates in newbackground(daytime).png (1821 x 864).
+// All numbers are pixel coordinates in the background images (all 1821 x 864, same layout).
 const Room = {
   width: 1821,
   height: 864,
@@ -40,10 +40,25 @@ const Room = {
     ];
   },
 
+  // Background for each part of the day. "from" is the hour it starts (24-hour clock);
+  // each one lasts until the next one starts. All images are the same size and layout.
+  backgrounds: [
+    { from: 5,  file: "background5amto6am.jpeg" },  // dawn
+    { from: 6,  file: "background6amto8am.jpeg" },  // morning
+    { from: 8,  file: "background8amto5pm.png" },   // day
+    { from: 17, file: "background5pmto7pm.jpeg" },  // evening
+    { from: 19, file: "background7pmto8pm.jpeg" },  // dusk
+    { from: 20, file: "background8pmto5am.jpeg" },  // night
+  ],
+
+  // The background that should show at this hour (wraps past midnight).
+  backgroundFor(hour) {
+    const sorted = [...this.backgrounds].sort((a, b) => a.from - b.from);
+    return sorted.filter(b => b.from <= hour).pop() ?? sorted[sorted.length - 1];
+  },
+
   draw(ctx) {
-    const hour = new Date().getHours();
-    const key = (hour >= 6 && hour < 20) ? "apartment-day" : "apartment-night";
-    const bg = Assets.get(key);
+    const bg = Assets.get("bg_" + this.backgroundFor(new Date().getHours()).file);
     if (bg) ctx.drawImage(bg, 0, 0, this.width, this.height);
   },
 

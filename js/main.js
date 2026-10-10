@@ -62,9 +62,7 @@ async function start() {
   });
 
   await Promise.all([
-    // No night version of the new background yet, so day is used for both.
-    Assets.load("apartment-day",   "assets/backgrounds/newbackground(daytime).png"),
-    Assets.load("apartment-night", "assets/backgrounds/newbackground(daytime).png"),
+    ...Room.backgrounds.map(b => Assets.load("bg_" + b.file, "assets/backgrounds/" + b.file)),
     Assets.load("avatar-down",     "assets/girlcharacter/avatar-front.png"),
     Assets.load("avatar-up",       "assets/girlcharacter/avatar-back.png"),
     Assets.load("avatar-left",     "assets/girlcharacter/avatar-left.png"),
