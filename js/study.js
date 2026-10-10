@@ -127,7 +127,7 @@ const Study = {
       document.getElementById('quiz-back').addEventListener('click', () => this._renderOptions());
       return;
     }
-    this.points = points;
+    Coins.set(points);
 
     const badge = c => {
       if (c.recentPercent === null) return '<span class="score-badge new">not tried yet</span>';
@@ -138,7 +138,7 @@ const Study = {
     this._panel.innerHTML = `
       <div class="quiz-top">
         <button class="panel-back" id="quiz-back">← back</button>
-        <span class="points-pill">⭐ ${points} pts</span>
+        <span class="points-pill"><i class="coin"></i>${points} coins</span>
       </div>
       <h2 class="panel-title">quiz · ${this._e(this.selectedClass.name)}</h2>
       <p class="quiz-hint">pick a chapter · % is your last 30 answers</p>
@@ -173,13 +173,13 @@ const Study = {
     const top = `
       <div class="quiz-top">
         <button class="panel-back" id="quiz-back">← chapters</button>
-        <span class="points-pill" id="points-pill">⭐ ${this.points} pts</span>
+        <span class="points-pill"><i class="coin"></i><span id="points-pill">${Coins.value} coins</span></span>
       </div>
       <h2 class="panel-title">${this._e(chapter.title)}</h2>`;
 
     if (!q) {
       this._panel.innerHTML = `${top}
-        <p class="quiz-msg">${questions.length ? "You've gone through every question in this chapter ✨" : 'No questions in this chapter yet.'}</p>
+        <p class="quiz-msg">${questions.length ? "You've gone through every question in this chapter!" : 'No questions in this chapter yet.'}</p>
         ${questions.length ? '<button class="panel-btn" id="quiz-again">go again</button>' : ''}`;
       document.getElementById('quiz-back').addEventListener('click', () => this._renderQuizChapters());
       document.getElementById('quiz-again')?.addEventListener('click', () => this._startQuiz(chapter));
@@ -234,8 +234,8 @@ const Study = {
       return;
     }
 
-    this.points = result.totalPoints;
-    document.getElementById('points-pill').textContent = `⭐ ${result.totalPoints} pts`;
+    Coins.set(result.totalPoints);
+    document.getElementById('points-pill').textContent = `${result.totalPoints} coins`;
 
     // Highlight the right choice (and the wrong pick, if any).
     this._panel.querySelectorAll('.quiz-choice').forEach(el => {
@@ -246,7 +246,7 @@ const Study = {
     feedback.innerHTML = `
       <p class="quiz-result ${result.correct ? 'right' : 'wrong'}">
         ${result.correct
-          ? `✓ correct! +${result.pointsEarned} pts`
+          ? `✓ correct! +${result.pointsEarned} coins`
           : `✗ the answer was <b>${this._e(result.correctAnswer)}</b>`}
       </p>
       <button class="panel-btn" id="quiz-next">next →</button>`;

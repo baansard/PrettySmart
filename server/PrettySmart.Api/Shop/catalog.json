@@ -1,0 +1,182 @@
+[
+  {
+    "id": "dwarfgourami",
+    "kind": "fish",
+    "name": "Dwarf Gourami",
+    "type": "Gourami",
+    "price": 70,
+    "description": "booooringgg.",
+    "personality": ["shy", "shimmery", "gentle"],
+    "care": 2
+  },
+  {
+    "id": "pandacorydora",
+    "kind": "fish",
+    "name": "Panda Cory",
+    "type": "Corydoras catfish",
+    "price": 50,
+    "description": "don't eat these catfish...",
+    "personality": ["tidy", "social", "tiny"],
+    "care": 1
+  },
+  {
+    "id": "orangeplaty",
+    "kind": "fish",
+    "name": "Orange Platy",
+    "type": "Livebearer",
+    "price": 40,
+    "description": "Platy like it's 1999.",
+    "personality": ["cheerful", "hardy"],
+    "care": 1
+  },
+  {
+    "id": "femalecherrybarb",
+    "kind": "fish",
+    "name": "Cherry Barb",
+    "type": "Barb",
+    "price": 30,
+    "description": "The cherry on top.",
+    "personality": ["gentle", "peachy", "social"],
+    "care": 1
+  },
+  {
+    "id": "guppy",
+    "kind": "fish",
+    "name": "Guppy",
+    "type": "Livebearer",
+    "price": 30,
+    "description": "47 kids. Doesn't pay child support. Sigh...",
+    "personality": ["playful", "fancy", "busy"],
+    "care": 1
+  },
+  {
+    "id": "neontetra",
+    "kind": "fish",
+    "name": "Neon Tetra",
+    "type": "Tetra family",
+    "price": 30,
+    "description": "Red 40 connoisseur.",
+    "personality": ["sparkly", "social"],
+    "care": 1
+  },
+  {
+    "id": "fantailgoldfish",
+    "kind": "fish",
+    "name": "Fantail Goldfish",
+    "type": "Goldfish",
+    "price": 80,
+    "description": "Fancy pants!",
+    "personality": ["dreamy", "classic", "hungry"],
+    "care": 2
+  },
+  {
+    "id": "commonbetta",
+    "kind": "fish",
+    "name": "Betta",
+    "type": "Gourami family",
+    "price": 80,
+    "description": "anger management is going well!",
+    "personality": ["bold", "dramatic", "solo"],
+    "care": 2
+  },
+  {
+    "id": "classicangelfish",
+    "kind": "fish",
+    "name": "Angelfish",
+    "type": "Cichlid",
+    "price": 120,
+    "description": "Name is misleading...",
+    "personality": ["elegant", "graceful"],
+    "care": 2
+  },
+  {
+    "id": "rummynosetetra",
+    "kind": "fish",
+    "name": "Rummy-Nose Tetra",
+    "type": "Tetra family",
+    "price": 50,
+    "description": "Name him Rudolph.",
+    "personality": ["social", "speedy"],
+    "care": 2
+  },
+  {
+    "id": "discus",
+    "kind": "fish",
+    "name": "Discus",
+    "type": "Cichlid",
+    "price": 150,
+    "description": "don't put this disc in your DVD player...",
+    "personality": ["royal", "fancy", "picky"],
+    "care": 3
+  },
+  {
+    "id": "plecostomus",
+    "kind": "fish",
+    "name": "Pleco",
+    "type": "Armored catfish",
+    "price": 90,
+    "description": "Roomba.",
+    "personality": ["helpful", "sleepy", "nocturnal"],
+    "care": 2
+  },
+  {
+    "id": "cat",
+    "kind": "cat",
+    "name": "Carmy",
+    "type": "Siberian",
+    "price": 1850,
+    "description": "wow.. fancy",
+    "personality": ["cuddly", "pig", "slob"],
+    "care": 3
+  },
+  {
+    "id": "bingus",
+    "kind": "cat",
+    "name": "Bingus",
+    "type": "Orange tabby",
+    "price": 900,
+    "description": "One brain cell. Uses it wisely.",
+    "personality": ["silly", "loud", "hungry"],
+    "care": 2
+  },
+  {
+    "id": "felix",
+    "kind": "cat",
+    "name": "Felix",
+    "type": "Maine Coon",
+    "price": 1500,
+    "description": "More floof than cat.",
+    "personality": ["fluffy", "gentle", "regal"],
+    "care": 3
+  },
+  {
+    "id": "sphynx",
+    "kind": "cat",
+    "name": "Sphynx",
+    "type": "Sphynx",
+    "price": 1200,
+    "description": "Forgot to put on a sweater.",
+    "personality": ["clingy", "warm", "dramatic"],
+    "care": 3
+  },
+  {
+    "id": "drycatfood",
+    "kind": "food",
+    "name": "Dry Cat Food",
+    "type": "Cat kibble",
+    "price": 20,
+    "description": "Crunchy...",
+    "personality": ["crunchy", "tasty"],
+    "care": 1
+  },
+  {
+    "id": "fishfoodflakes",
+    "kind": "food",
+    "name": "Fish Food Flakes",
+    "type": "Flake food",
+    "price": 15,
+    "description": "Colorful flakes for every fish in your tank.",
+    "personality": ["colorful", "nutritious"],
+    "care": 1
+  }
+]

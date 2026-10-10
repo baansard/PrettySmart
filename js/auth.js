@@ -31,6 +31,8 @@ const Auth = {
   _ready() {
     Study.init();
     Manage.init();
+    PetProfile.init();
+    Coins.refresh();
     start();
   },
 

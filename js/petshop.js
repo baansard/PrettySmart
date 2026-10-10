@@ -10,6 +10,11 @@ const PetShop = {
   ],
   FISH_PER_PAGE: 4,
 
+  // Cat ids — each has a picture at assets/cat/<id>front.png ("cat" is Carmy).
+  CATS: ["cat", "bingus", "felix", "sphynx"],
+  CATS_PER_PAGE: 4,
+  catPage: 0,
+
   // Per-fish scale multipliers — 1.0 is default size, lower = smaller.
   _FISH_SCALE: {
     femalecherrybarb: 0.75,
@@ -27,9 +32,13 @@ const PetShop = {
     catH:      0.195,  // cat item height
     foodH:     0.155,  // food item height
     arrowX:    0.865,  // arrow button left edge
-    arrowY:    0.355,  // arrow button top edge
+    arrowY:    0.355,  // fish arrow button top edge
+    catArrowY: 0.560,  // cat arrow button top edge
     arrowSize: 0.058,  // arrow button width & height
   },
+
+  // Where each item was last drawn (screen coords), so clicks can open its profile.
+  _hits: [],
 
   toggle() { this.open = !this.open; },
   close()  { this.open = false; },
@@ -44,11 +53,13 @@ const PetShop = {
     return { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
   },
 
-  _arrowBtn(r) {
+  _arrowBtn(r, top = this._L.arrowY) {
     const l = this._L;
     const s = r.w * l.arrowSize;
-    return { x: r.x + r.w * l.arrowX, y: r.y + r.h * l.arrowY, w: s, h: s };
+    return { x: r.x + r.w * l.arrowX, y: r.y + r.h * top, w: s, h: s };
   },
+
+  _inside(px, py, b) { return px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h; },
 
   handleClick(cx, cy, canvas) {
     if (!this.open) return;
@@ -61,12 +72,20 @@ const PetShop = {
       return;
     }
 
-    // Arrow cycles fish pages
-    const btn = this._arrowBtn(r);
-    if (cx >= btn.x && cx <= btn.x + btn.w && cy >= btn.y && cy <= btn.y + btn.h) {
-      const pages = Math.ceil(this.FISH.length / this.FISH_PER_PAGE);
-      this.fishPage = (this.fishPage + 1) % pages;
+    // Arrows cycle pages
+    if (this._inside(cx, cy, this._arrowBtn(r))) {
+      this.fishPage = (this.fishPage + 1) % Math.ceil(this.FISH.length / this.FISH_PER_PAGE);
+      return;
     }
+    const catPages = Math.ceil(this.CATS.length / this.CATS_PER_PAGE);
+    if (catPages > 1 && this._inside(cx, cy, this._arrowBtn(r, this._L.catArrowY))) {
+      this.catPage = (this.catPage + 1) % catPages;
+      return;
+    }
+
+    // Clicking an item opens its profile
+    const hit = this._hits.find(h => this._inside(cx, cy, h));
+    if (hit) PetProfile.show(hit.id);
   },
 
   draw(ctx, canvas) {
@@ -84,6 +103,7 @@ const PetShop = {
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(img, r.x, r.y, r.w, r.h);
 
+    this._hits = [];
     this._drawFishShelf(ctx, r);
     this._drawCatShelf(ctx, r);
     this._drawFoodShelf(ctx, r);
@@ -105,13 +125,16 @@ const PetShop = {
       const h = itemH * mult;
       const scale = h / fish.height;
       const iw = fish.width * scale;
-      ctx.drawImage(fish, xStart + slotW * i + (slotW - iw) / 2, shelfY - h, iw, h);
+      const fx = xStart + slotW * i + (slotW - iw) / 2;
+      ctx.drawImage(fish, fx, shelfY - h, iw, h);
+      this._hits.push({ id: name, x: fx, y: shelfY - h, w: iw, h });
     });
 
-    // Arrow button
-    const btn   = this._arrowBtn(r);
-    const pages = Math.ceil(this.FISH.length / this.FISH_PER_PAGE);
-    ctx.fillStyle = pages > 1 ? "rgba(224,96,144,0.92)" : "rgba(160,160,160,0.4)";
+    this._drawArrow(ctx, this._arrowBtn(r), Math.ceil(this.FISH.length / this.FISH_PER_PAGE) > 1);
+  },
+
+  _drawArrow(ctx, btn, enabled) {
+    ctx.fillStyle = enabled ? "rgba(224,96,144,0.92)" : "rgba(160,160,160,0.4)";
     ctx.beginPath();
     ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 5);
     ctx.fill();
@@ -125,13 +148,24 @@ const PetShop = {
   },
 
   _drawCatShelf(ctx, r) {
-    const l    = this._L;
-    const img  = Assets.get("catfront");
-    if (!img) return;
-    const itemH = r.h * l.catH;
-    const scale = itemH / img.height;
-    const iw    = img.width * scale;
-    ctx.drawImage(img, r.x + r.w * l.xStart + 10, r.y + r.h * l.catY - itemH, iw, itemH);
+    const l      = this._L;
+    const shelfY = r.y + r.h * l.catY;
+    const xStart = r.x + r.w * l.xStart;
+    const itemH  = r.h * l.catH;
+    const slotW  = (r.x + r.w * l.xFishEnd - xStart) / this.CATS_PER_PAGE;
+
+    const pageStart = this.catPage * this.CATS_PER_PAGE;
+    this.CATS.slice(pageStart, pageStart + this.CATS_PER_PAGE).forEach((id, i) => {
+      const img = Assets.get("cat_" + id);
+      if (!img) return;
+      const iw = img.width * (itemH / img.height);
+      const x  = xStart + slotW * i + (slotW - iw) / 2;
+      ctx.drawImage(img, x, shelfY - itemH, iw, itemH);
+      this._hits.push({ id, x, y: shelfY - itemH, w: iw, h: itemH });
+    });
+
+    // Only show the cat arrow once there are more cats than fit on the shelf
+    if (this.CATS.length > this.CATS_PER_PAGE) this._drawArrow(ctx, this._arrowBtn(r, l.catArrowY), true);
   },
 
   _drawFoodShelf(ctx, r) {
@@ -147,6 +181,7 @@ const PetShop = {
       const scale = itemH / img.height;
       const iw = img.width * scale;
       ctx.drawImage(img, x, shelfY - itemH, iw, itemH);
+      this._hits.push({ id: key, x, y: shelfY - itemH, w: iw, h: itemH });
       x += iw + gap;
     }
   },

@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PrettySmart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -32,6 +35,14 @@
     <button id="manage-btn" class="sidebar-btn">Manage</button>
   </div>
 
+  <!-- Coin balance -->
+  <button id="coins-btn" class="coins-btn hidden" title="Earn 10 coins for every correct quiz answer"><i class="coin"></i><span id="coins-count">0</span></button>
+
+  <!-- Pet profile (opens from the pet shop) -->
+  <div id="pet-overlay" class="hidden">
+    <div id="pet-card"></div>
+  </div>
+
   <!-- Study overlay -->
   <div id="study-overlay" class="hidden">
     <div id="study-panel"></div>
@@ -47,6 +58,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/db.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/coins.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/input.js"></script>
   <script src="js/assets.js"></script>

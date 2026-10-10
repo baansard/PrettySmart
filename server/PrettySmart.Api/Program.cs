@@ -24,6 +24,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<SupabaseRest>();
 builder.Services.AddProblemDetails();
+builder.Services.AddSingleton(sp => new PrettySmart.Api.Shop.ShopCatalog(
+    Path.Combine(builder.Environment.ContentRootPath, "Shop", "catalog.json"),
+    sp.GetRequiredService<ILogger<PrettySmart.Api.Shop.ShopCatalog>>()));
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 
 var app = builder.Build();
 
@@ -63,6 +68,7 @@ app.UseAuthorization();
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 app.MapClassEndpoints();
 app.MapQuizEndpoints();
+app.MapShopEndpoints();
 
 app.Run();
 

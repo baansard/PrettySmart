@@ -15,6 +15,12 @@ Browser game (HTML canvas + JS)  →  C# Web API (ASP.NET Core 9)  →  Supabase
   - Ownership (`user_id`) is always taken from the verified token, never from the request body.
 - **Tests** — `server/PrettySmart.Api.Tests` (xUnit + `WebApplicationFactory`) cover auth, validation, error mapping, and the Supabase calls.
 
+## Editing the pet shop
+
+Pet names, types, prices, descriptions, personality and care level live in
+`server/PrettySmart.Api/Shop/catalog.json`. Save the file and refresh the game; no restart needed.
+If an edit has a mistake, the server keeps using the last working version and prints what's wrong.
+
 ## Database setup
 
 Run the scripts in `server/sql/` once, in order, in the Supabase SQL Editor.
@@ -49,6 +55,9 @@ dotnet test
 | GET    | `/api/quiz/questions?classId=&chapterId=` | Shuffled questions (answers are never sent to the browser) |
 | POST   | `/api/quiz/answers`  | Grade an answer `{ questionId, answer }`, record it, award points |
 | GET    | `/api/quiz/points`   | Your total points |
+| GET    | `/api/coins`         | Your coin balance |
+| GET    | `/api/shop/items`    | Pet shop catalog: name, kind, price, description |
+| GET    | `/api/shop/items/{id}` | One item's profile |
 
 ## Controls
 

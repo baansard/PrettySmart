@@ -95,6 +95,6 @@ public static class QuizEndpoints
 
     private static bool IsTypeIn(QuestionRow q) => q.IsMath || q.QuestionType == "type_in";
 
-    private static async Task<int> TotalPoints(SupabaseRest db, CancellationToken ct) =>
+    public static async Task<int> TotalPoints(SupabaseRest db, CancellationToken ct) =>
         await db.CountAsync("quiz_answers?is_correct=eq.true", ct) * QuizGrader.PointsPerCorrect;
 }

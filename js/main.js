@@ -41,7 +41,10 @@ async function start() {
   window.addEventListener("keydown", (e) => {
     if (e.key.toLowerCase() === "h") showHitboxes = !showHitboxes;
     if (e.key.toLowerCase() === "e" && !Study.open && Study.isNearDesk(Player)) Study.openMenu();
-    if (e.key === "Escape") { Study.close(); PetShop.close(); Manage.hide(); }
+    if (e.key === "Escape") {
+      if (PetProfile.visible) { PetProfile.hide(); return; } // close just the profile, keep the shop open
+      Study.close(); PetShop.close(); Manage.hide();
+    }
   });
 
   canvas.addEventListener("click", (e) => {
@@ -66,7 +69,7 @@ async function start() {
     Assets.load("avatar-left",     "assets/girlcharacter/avatar-left.png"),
     Assets.load("avatar-right",    "assets/girlcharacter/avatar-right.png"),
     Assets.load("petshopmenu",     "assets/petshopmenu.png"),
-    Assets.load("catfront",        "assets/cat/catfront.png"),
+    ...PetShop.CATS.map(id => Assets.load("cat_" + id, `assets/cat/${id}front.png`)),
     Assets.load("drycatfood",      "assets/drycatfood.png"),
     Assets.load("fishfoodflakes",  "assets/fishfoodflakes.png"),
     ...PetShop.FISH.map(n => Assets.load("fish_" + n, `assets/fish/${n}.png`)),
