@@ -5,7 +5,7 @@ A cozy study game: walk around your apartment, sit at your desk, and study your 
 ## Architecture
 
 ```
-Browser game (HTML canvas + JS)  →  C# Web API (ASP.NET Core 9)  →  Supabase (Postgres + Auth)
+Browser game (HTML canvas + JS)  →  C# Web API (ASP.NET Core 10)  →  Supabase (Postgres + Auth)
 ```
 
 - **Frontend** — vanilla JS + canvas (`index.html`, `style.css`, `js/`, `assets/`).
@@ -27,7 +27,7 @@ Run the scripts in `server/sql/` once, in order, in the Supabase SQL Editor.
 
 ## Run it
 
-Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download).
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```sh
 cd server/PrettySmart.Api
