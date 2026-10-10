@@ -115,3 +115,34 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
         Assert.Contains(supabase.Calls, c => c.Request.RequestUri!.ToString().Contains($"limit={QuizEndpoints.RecentWindow}"));
     }
 }
+
+public class FlashcardEndpointsTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+{
+    [Fact]
+    public async Task Chapters_list_card_counts_including_no_chapter()
+    {
+        var supabase = new FakeSupabase()
+            .On("flashcards?", """[{"id":1,"chapter_id":3,"term":"A","definition":"a"},{"id":2,"chapter_id":3,"term":"B","definition":"b"},{"id":3,"chapter_id":null,"term":"C","definition":"c"}]""")
+            .On("chapters?", """[{"id":3,"title":"Ch 1"},{"id":4,"title":"Ch 2"}]""");
+
+        var chapters = await factory.SignedInClient(supabase).GetFromJsonAsync<List<FlashcardChapter>>("/api/flashcards/chapters?classId=1");
+
+        Assert.Collection(chapters!,
+            c => { Assert.Equal("Ch 1", c.Title); Assert.Equal(2, c.Count); },
+            c => { Assert.Equal("Ch 2", c.Title); Assert.Equal(0, c.Count); },
+            c => { Assert.Null(c.ChapterId); Assert.Equal(1, c.Count); });
+    }
+
+    [Fact]
+    public async Task Cards_for_a_chapter_are_read_as_the_player()
+    {
+        var supabase = new FakeSupabase().On("flashcards?", """[{"id":7,"chapter_id":3,"term":"ROI","definition":"Return on investment"}]""");
+
+        var cards = await factory.SignedInClient(supabase).GetFromJsonAsync<List<Flashcard>>("/api/flashcards?classId=1&chapterId=3");
+
+        Assert.Equal("ROI", Assert.Single(cards!).Term);
+        var call = supabase.Calls.Single();
+        Assert.Contains("chapter_id=eq.3", call.Request.RequestUri!.ToString());
+        Assert.Equal("Bearer test-token", call.Request.Headers.Authorization!.ToString());
+    }
+}

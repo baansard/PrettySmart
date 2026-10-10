@@ -81,6 +81,7 @@ app.MapClassEndpoints();
 app.MapQuizEndpoints();
 app.MapShopEndpoints();
 app.MapAiEndpoints();
+app.MapFlashcardEndpoints();
 
 app.Run();
 

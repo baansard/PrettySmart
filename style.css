@@ -521,6 +521,79 @@ canvas {
 .ai-save { border-top: 2px dashed #f8bbd0; padding-top: 14px; }
 .ai-into { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: bold; color: #c2185b; }
 
+/* ── Flashcards (desk) ───────────────────────────────────────────────────── */
+.fc-progress { font-size: 12px; font-weight: bold; color: #b07090; }
+
+.fc-card {
+  display: block;
+  width: 100%;
+  height: 220px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  perspective: 1000px;
+  font-family: inherit;
+}
+.fc-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(.3, 1.3, .5, 1);
+  transform-style: preserve-3d;
+}
+.fc-card.flipped .fc-inner { transform: rotateY(180deg); }
+
+.fc-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 22px 26px;
+  border-radius: 20px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 4px 0 #e48aaa, 0 10px 22px rgba(90, 32, 48, 0.15);
+  overflow-y: auto;
+}
+.fc-front {
+  background:
+    repeating-linear-gradient(#fff 0 27px, #fde3ec 27px 28px),
+    #fff;
+  border: 3px solid #f48fb1;
+}
+.fc-back {
+  background: #fff6fa;
+  border: 3px solid #c2185b;
+  transform: rotateY(180deg);
+}
+.fc-face small {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #e06090;
+}
+.fc-text { font-size: 17px; line-height: 1.45; color: #5a2030; text-align: center; overflow-wrap: anywhere; }
+.fc-front .fc-text { font-size: 22px; font-weight: bold; color: #c2185b; }
+
+.fc-hint { font-size: 11px; color: #b07090; text-align: center; margin-top: -4px; }
+
+.fc-nav { display: flex; gap: 8px; justify-content: space-between; }
+.fc-btn { flex: 1; padding: 9px 10px; }
+.fc-btn:disabled { opacity: 0.45; cursor: default; }
+.panel-btn.fc-shuffle { background: #fff; color: #c2185b; border: 2px solid #f48fb1; }
+.panel-btn.fc-shuffle:hover { background: #fde3ec; }
+.panel-btn.fc-shuffle.on { background: #c2185b; color: #fff; border-color: #c2185b; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-inner { transition: none; }
+}
+
 /* ── Hint ────────────────────────────────────────────────────────────────── */
 .hint {
   position: fixed;

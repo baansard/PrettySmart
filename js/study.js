@@ -16,6 +16,7 @@ const Study = {
   },
 
   init() {
+    window.addEventListener('keydown', e => this._flashcardKeys(e));
     document.getElementById('study-overlay').addEventListener('click', e => {
       if (e.target.id === 'study-overlay') this.close();
     });
@@ -32,6 +33,7 @@ const Study = {
   close() {
     this.open = false;
     this.selectedClass = null;
+    this._cards = null;
     document.getElementById('study-overlay').classList.add('hidden');
   },
 
@@ -106,7 +108,127 @@ const Study = {
     `;
     document.getElementById('study-back').addEventListener('click', () => this._renderClasses());
     document.getElementById('opt-quiz').addEventListener('click', () => this._renderQuizChapters());
-    // Book and flashcards will be wired up in a later step
+    document.getElementById('opt-flashcards').addEventListener('click', () => this._renderFlashcardChapters());
+    // Book will be wired up in a later step
+  },
+
+  // ── Flashcards: pick a chapter ─────────────────────────────────────────────
+  async _renderFlashcardChapters() {
+    this._cards = null;
+    this._panel.classList.remove('art');
+    this._panel.innerHTML = '<p class="muted">loading…</p>';
+
+    const chapters = await Api.get('/flashcards/chapters?classId=' + encodeURIComponent(this.selectedClass.id)).catch(() => null);
+    if (!this.open) return;
+    if (!chapters) {
+      this._panel.innerHTML = `
+        <button class="panel-back" id="fc-back">← back</button>
+        <p class="quiz-msg">Couldn't load your flashcards — check the server window for details.</p>`;
+      document.getElementById('fc-back').addEventListener('click', () => this._renderOptions());
+      return;
+    }
+
+    this._panel.innerHTML = `
+      <button class="panel-back" id="fc-back">← back</button>
+      <h2 class="panel-title">flashcards · ${this._e(this.selectedClass.name)}</h2>
+      <p class="quiz-hint">pick a chapter</p>
+      <ul class="panel-list">
+        ${chapters.length ? chapters.map((c, i) => `
+          <li class="panel-item row ${c.count ? '' : 'muted'}" data-index="${i}">
+            <span>${this._e(c.title)}</span>
+            <span class="q-count">${c.count}</span>
+          </li>`).join('')
+        : '<li class="panel-item muted">No flashcards yet — add some in Manage</li>'}
+      </ul>
+    `;
+    document.getElementById('fc-back').addEventListener('click', () => this._renderOptions());
+    this._panel.querySelectorAll('.panel-item[data-index]:not(.muted)').forEach(el =>
+      el.addEventListener('click', () => this._startFlashcards(chapters[el.dataset.index]))
+    );
+  },
+
+  // ── Flashcards: flip through a chapter ─────────────────────────────────────
+  async _startFlashcards(chapter) {
+    this._panel.innerHTML = '<p class="muted">loading…</p>';
+    const params = new URLSearchParams({ classId: this.selectedClass.id, chapterId: chapter.chapterId ?? 'none' });
+    const cards = await Api.get('/flashcards?' + params).catch(() => []);
+    if (!this.open) return;
+    this._cards = { chapter, cards, order: cards.map((_, i) => i), index: 0, flipped: false, shuffled: false };
+    this._renderCard();
+  },
+
+  _renderCard() {
+    const deck = this._cards;
+    const { chapter, cards, order, index } = deck;
+    const card = cards[order[index]];
+
+    this._panel.innerHTML = `
+      <div class="quiz-top">
+        <button class="panel-back" id="fc-back">← chapters</button>
+        <span class="fc-progress">${cards.length ? `card ${index + 1} of ${cards.length}` : ''}</span>
+      </div>
+      <h2 class="panel-title">${this._e(chapter.title)}</h2>
+      ${card ? `
+        <button class="fc-card ${deck.flipped ? 'flipped' : ''}" id="fc-card" aria-label="flip card">
+          <span class="fc-inner">
+            <span class="fc-face fc-front"><small>term</small><span class="fc-text">${this._e(card.term)}</span></span>
+            <span class="fc-face fc-back"><small>definition</small><span class="fc-text">${this._e(card.definition)}</span></span>
+          </span>
+        </button>
+        <p class="fc-hint">click the card or press Space to flip · ← → to move</p>
+        <div class="fc-nav">
+          <button class="panel-btn fc-btn" id="fc-prev" ${index === 0 ? 'disabled' : ''}>← back</button>
+          <button class="panel-btn fc-btn fc-shuffle ${deck.shuffled ? 'on' : ''}" id="fc-shuffle">shuffle</button>
+          <button class="panel-btn fc-btn" id="fc-next">${index === cards.length - 1 ? 'start over' : 'next →'}</button>
+        </div>`
+      : '<p class="quiz-msg">No flashcards in this chapter yet.</p>'}
+    `;
+
+    document.getElementById('fc-back').addEventListener('click', () => this._renderFlashcardChapters());
+    if (!card) return;
+    document.getElementById('fc-card').addEventListener('click', () => this._flip());
+    document.getElementById('fc-prev').addEventListener('click', () => this._moveCard(-1));
+    document.getElementById('fc-next').addEventListener('click', () => this._moveCard(1));
+    document.getElementById('fc-shuffle').addEventListener('click', () => this._shuffleCards());
+  },
+
+  _flip() {
+    this._cards.flipped = !this._cards.flipped;
+    document.getElementById('fc-card')?.classList.toggle('flipped', this._cards.flipped);
+  },
+
+  _moveCard(step) {
+    const deck = this._cards;
+    if (!deck.cards.length) return;
+    deck.index = step > 0
+      ? (deck.index + 1) % deck.cards.length   // after the last card, "start over"
+      : Math.max(0, deck.index - 1);
+    deck.flipped = false;
+    this._renderCard();
+  },
+
+  _shuffleCards() {
+    const deck = this._cards;
+    deck.shuffled = !deck.shuffled;
+    deck.order = deck.cards.map((_, i) => i);
+    if (deck.shuffled) {
+      for (let i = deck.order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck.order[i], deck.order[j]] = [deck.order[j], deck.order[i]];
+      }
+    }
+    deck.index = 0;
+    deck.flipped = false;
+    this._renderCard();
+  },
+
+  // Space flips, arrows move — only while a flashcard is showing.
+  _flashcardKeys(e) {
+    if (!this.open || !this._cards || !document.getElementById('fc-card')) return;
+    const onButton = e.target.closest?.('button'); // a focused button already handles Space/Enter itself
+    if ((e.key === ' ' || e.key === 'Enter') && !onButton) { e.preventDefault(); this._flip(); }
+    else if (e.key === 'ArrowRight') this._moveCard(1);
+    else if (e.key === 'ArrowLeft' && this._cards.index > 0) this._moveCard(-1);
   },
 
   // ── Quiz: pick a chapter ───────────────────────────────────────────────────
