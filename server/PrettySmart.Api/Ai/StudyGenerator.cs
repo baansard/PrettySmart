@@ -4,7 +4,8 @@ using Microsoft.Extensions.Options;
 
 namespace PrettySmart.Api.Ai;
 
-public sealed record GenerateRequest(string? Text, int MultipleChoice, int TypeIn, int Flashcards);
+/// <summary>Text to study from. With <c>Auto</c>, the AI decides how many of each to make (counts are ignored).</summary>
+public sealed record GenerateRequest(string? Text, int MultipleChoice, int TypeIn, int Flashcards, bool Auto = false);
 
 /// <summary>A drafted quiz question. <c>Type</c> is "multiple_choice" or "type_in".</summary>
 public sealed record DraftQuestion(string Question, string Type, IReadOnlyList<string> Choices, string CorrectAnswer);
@@ -79,6 +80,7 @@ public sealed class StudyGenerator(OpenAiClient ai)
         var text = req.Text?.Trim() ?? "";
         if (text.Length < 50) return "Paste at least a paragraph of text.";
         if (text.Length > MaxTextLength) return $"That's too long — paste up to {MaxTextLength:N0} characters at a time.";
+        if (req.Auto) return null;
         if (req.MultipleChoice is < 0 or > MaxPerType || req.TypeIn is < 0 or > MaxPerType || req.Flashcards is < 0 or > MaxPerType)
             return $"Pick between 0 and {MaxPerType} of each.";
         if (req.MultipleChoice + req.TypeIn + req.Flashcards == 0) return "Pick how many of something to make.";
@@ -87,9 +89,23 @@ public sealed class StudyGenerator(OpenAiClient ai)
 
     public async Task<StudyDrafts> GenerateAsync(GenerateRequest req, CancellationToken ct)
     {
+        var instructions = req.Auto
+            ? $"""
+              Decide how many of each to make based on what this text is worth studying. Cover every important
+              concept, definition, formula, process and fact a student would be tested on, and skip trivia.
+              Use multiple choice for concepts, comparisons and "which of these" ideas; type-in for terms, names,
+              numbers or formulas with one short exact answer; flashcards for definitions and key ideas.
+              A short text should get only a few items — don't pad. At most {MaxPerType} of each type.
+              """
+            : $"""
+              Make exactly {req.MultipleChoice} multiple-choice questions, {req.TypeIn} type-in questions,
+              and {req.Flashcards} flashcards.
+              """;
+
         var prompt = $"""
-            Make exactly {req.MultipleChoice} multiple-choice questions, {req.TypeIn} type-in questions,
-            and {req.Flashcards} flashcards from this text:
+            {instructions}
+
+            Here is the text:
 
             <text>
             {req.Text!.Trim()}
@@ -108,6 +124,7 @@ public sealed class StudyGenerator(OpenAiClient ai)
     /// </summary>
     public static StudyDrafts Clean(StudyDrafts raw, GenerateRequest req)
     {
+        if (req.Auto) req = req with { MultipleChoice = MaxPerType, TypeIn = MaxPerType, Flashcards = MaxPerType };
         static string Tidy(string? s) => (s ?? "").Trim();
         var seenQuestions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var questions = new List<DraftQuestion>();

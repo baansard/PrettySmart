@@ -34,4 +34,28 @@ public class LiveOpenAiTests(WebApplicationFactory<Program> factory) : IClassFix
         foreach (var q in drafts.Questions) Console.WriteLine($"Q [{q.Type}] {q.Question} → {q.CorrectAnswer}");
         foreach (var f in drafts.Flashcards) Console.WriteLine($"F {f.Term}: {f.Definition}");
     }
+
+    [Fact]
+    public async Task LiveOpenAi_auto_mode_picks_its_own_amounts()
+    {
+        if (Environment.GetEnvironmentVariable("OPENAI_LIVE") != "1") return;
+
+        using var scope = factory.Services.CreateScope();
+        var generator = scope.ServiceProvider.GetRequiredService<StudyGenerator>();
+
+        var drafts = await generator.GenerateAsync(new GenerateRequest(
+            """
+            Return on investment (ROI) measures the profit of an investment relative to its cost:
+            ROI = (gain - cost) / cost. Net present value (NPV) discounts future cash flows to today using a
+            discount rate; a project with a positive NPV adds value. The internal rate of return (IRR) is the
+            discount rate at which NPV equals zero. Payback period is how long it takes to recover the initial cost,
+            but it ignores the time value of money.
+            """, 0, 0, 0, Auto: true), CancellationToken.None);
+
+        Assert.True(drafts.Questions.Count + drafts.Flashcards.Count > 0);
+        Console.WriteLine($"AUTO made {drafts.Questions.Count(q => q.Type == "multiple_choice")} MC, " +
+            $"{drafts.Questions.Count(q => q.Type == "type_in")} type-in, {drafts.Flashcards.Count} flashcards");
+        foreach (var q in drafts.Questions) Console.WriteLine($"Q [{q.Type}] {q.Question} → {q.CorrectAnswer}");
+        foreach (var f in drafts.Flashcards) Console.WriteLine($"F {f.Term}: {f.Definition}");
+    }
 }

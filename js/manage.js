@@ -250,7 +250,7 @@ const Manage = {
   // Paste any text → choose how many of each → review/edit drafts → save into a chapter.
   async _renderAi() {
     const chapters = await this._loadChapters();
-    const ai = this._ai ??= { text: '', mc: 5, typeIn: 0, cards: 10, drafts: null };
+    const ai = this._ai ??= { text: '', auto: true, mc: 5, typeIn: 0, cards: 10, drafts: null };
 
     this._panel.innerHTML = `
       <button class="panel-back" id="back">← back</button>
@@ -258,7 +258,8 @@ const Manage = {
       <div class="panel-form">
         <textarea id="ai-text" class="panel-textarea tall" placeholder="paste notes, a chapter, slide text…">${this._e(ai.text)}</textarea>
         <small class="ai-count" id="ai-count"></small>
-        <div class="ai-nums">
+        <label class="panel-check"><input type="checkbox" id="ai-auto" ${ai.auto ? 'checked' : ''}> let the AI decide what's important</label>
+        <div class="ai-nums" id="ai-nums" ${ai.auto ? 'hidden' : ''}>
           <label>multiple choice<input type="number" class="panel-input" id="ai-mc" min="0" max="30" value="${ai.mc}"></label>
           <label>type-in<input type="number" class="panel-input" id="ai-typein" min="0" max="30" value="${ai.typeIn}"></label>
           <label>flashcards<input type="number" class="panel-input" id="ai-cards" min="0" max="30" value="${ai.cards}"></label>
@@ -278,6 +279,12 @@ const Manage = {
     text.addEventListener('input', count);
     count();
 
+    const auto = document.getElementById('ai-auto');
+    auto.addEventListener('change', () => {
+      ai.auto = auto.checked;
+      document.getElementById('ai-nums').hidden = ai.auto;
+    });
+
     this._on('ai-go', () => this._generate(chapters));
     if (ai.drafts) this._renderDrafts(chapters);
   },
@@ -286,6 +293,7 @@ const Manage = {
     const ai = this._ai;
     const num = id => Math.max(0, Math.min(30, parseInt(document.getElementById(id).value, 10) || 0));
     ai.mc = num('ai-mc'); ai.typeIn = num('ai-typein'); ai.cards = num('ai-cards');
+    ai.auto = document.getElementById('ai-auto').checked;
 
     const status = document.getElementById('ai-status');
     const btn = document.getElementById('ai-go');
@@ -295,7 +303,7 @@ const Manage = {
     status.className = 'ai-status';
 
     const res = await Api.send('POST', '/ai/generate', {
-      text: ai.text, multipleChoice: ai.mc, typeIn: ai.typeIn, flashcards: ai.cards,
+      text: ai.text, multipleChoice: ai.mc, typeIn: ai.typeIn, flashcards: ai.cards, auto: ai.auto,
     });
 
     if (!document.getElementById('ai-go')) return; // left the screen while waiting

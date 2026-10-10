@@ -56,6 +56,16 @@ public class StudyGeneratorTests
         Assert.Equal(3, clean.Questions.Count);
     }
 
+    [Fact]
+    public void Auto_mode_ignores_counts_but_still_caps_at_30()
+    {
+        Assert.Null(StudyGenerator.Validate(new("long enough text long enough text long enough text long enough text", 0, 0, 0, Auto: true)));
+
+        var many = Enumerable.Range(1, 40).Select(i => new DraftFlashcard($"T{i}", "D")).ToList();
+        var clean = StudyGenerator.Clean(new([], many), new("x", 0, 0, 0, Auto: true));
+        Assert.Equal(StudyGenerator.MaxPerType, clean.Flashcards.Count);
+    }
+
     [Theory]
     [InlineData("short", 5, 0, 0, "at least a paragraph")]
     [InlineData(null, 5, 0, 0, "at least a paragraph")]
@@ -102,6 +112,21 @@ public class AiEndpointTests(WebApplicationFactory<Program> factory) : IClassFix
         Assert.Contains(Text, prompt);
         Assert.Contains("2 multiple-choice", prompt);
         Assert.Equal("Bearer sk-test", openAi.LastRequest!.Headers.Authorization!.ToString());
+    }
+
+    [Fact]
+    public async Task Auto_mode_lets_the_AI_decide()
+    {
+        var openAi = Replying(new { questions = Array.Empty<object>(), flashcards = new[] { new { term = "GDP", definition = "Total output" } } });
+
+        var res = await factory.SignedInClient(new FakeSupabase(), openAi)
+            .PostAsJsonAsync("/api/ai/generate", new { text = Text, auto = true });
+
+        res.EnsureSuccessStatusCode();
+        using var sent = JsonDocument.Parse(openAi.LastBody!);
+        var prompt = sent.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!;
+        Assert.Contains("Decide how many", prompt);
+        Assert.DoesNotContain("Make exactly", prompt);
     }
 
     [Fact]
