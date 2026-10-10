@@ -15,12 +15,11 @@ const PetShop = {
   CATS_PER_PAGE: 4,
   catPage: 0,
 
-  // Bottom shelf: food first, then equipment. Food pictures live in assets/, equipment in assets/equipment/.
+  // Bottom shelf: food first, then equipment. Pictures live in assets/supplies-shopitems/.
   SUPPLIES: [
     "drycatfood", "premiumcatfood", "fishfoodflakes", "premiumfishfood",
     "foodbowl", "waterbowl", "fountain", "scratchingpost", "tank10", "tank20",
   ],
-  EQUIPMENT: ["foodbowl", "waterbowl", "fountain", "scratchingpost", "tank10", "tank20"],
   SUPPLIES_PER_PAGE: 4,
   supplyPage: 0,
 
@@ -232,11 +231,16 @@ const PetShop = {
     ctx.textBaseline = "alphabetic";
   },
 
+  // Supplies whose picture file isn't named after the item id.
+  SUPPLY_FILES: {
+    foodbowl: "foodbasic",
+    waterbowl: "waterbowlbasic",
+  },
+
   // Where an item's picture lives.
   imagePath(id) {
     if (this.CATS.includes(id)) return `assets/cat/${id}front.png`;
     if (this.FISH.includes(id)) return `assets/fish/${id}.png`;
-    if (this.EQUIPMENT.includes(id)) return `assets/equipment/${id}.png`;
-    return `assets/${id}.png`;
+    return `assets/supplies-shopitems/${this.SUPPLY_FILES[id] ?? id}.png`;
   },
 };
