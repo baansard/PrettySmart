@@ -5,19 +5,18 @@ using Microsoft.Extensions.Options;
 
 namespace PrettySmart.Api.Supabase;
 
-/// <summary>
-/// Thin client for Supabase's REST (PostgREST) API. Every call is made *as the signed-in user*
-/// by forwarding their access token, so the database's Row Level Security policies keep
-/// applying and this server never needs an admin key.
-/// </summary>
-public sealed class SupabaseRest(HttpClient http, IOptions<SupabaseOptions> options, IHttpContextAccessor context)
+/// <summary>Shared plumbing for calling Supabase's REST (PostgREST) API.</summary>
+public abstract class SupabaseClient(HttpClient http, SupabaseOptions options)
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
-    private readonly SupabaseOptions _opt = options.Value;
+    protected SupabaseOptions Options { get; } = options;
+
+    /// <summary>Adds the apikey / Authorization headers for this kind of caller.</summary>
+    protected abstract void Authorize(HttpRequestMessage req);
 
     public async Task<List<T>> GetAsync<T>(string tableAndQuery, CancellationToken ct = default)
     {
@@ -49,6 +48,17 @@ public sealed class SupabaseRest(HttpClient http, IOptions<SupabaseOptions> opti
         return rows is [var first, ..] ? first : throw new InvalidOperationException($"Insert into {table} returned no row.");
     }
 
+    /// <summary>Updates matching rows and returns how many changed.</summary>
+    public async Task<int> UpdateAsync(string tableAndFilter, object changes, CancellationToken ct = default)
+    {
+        using var req = Build(HttpMethod.Patch, tableAndFilter);
+        req.Headers.Add("Prefer", "return=representation");
+        req.Content = JsonContent.Create(changes, options: Json);
+        using var res = await Send(req, ct);
+        var rows = await res.Content.ReadFromJsonAsync<List<JsonElement>>(Json, ct);
+        return rows?.Count ?? 0;
+    }
+
     /// <summary>Deletes matching rows and returns how many were removed (0 if none, or RLS hid them).</summary>
     public async Task<int> DeleteAsync(string tableAndFilter, CancellationToken ct = default)
     {
@@ -59,16 +69,20 @@ public sealed class SupabaseRest(HttpClient http, IOptions<SupabaseOptions> opti
         return rows?.Count ?? 0;
     }
 
+    /// <summary>Calls a Postgres function (<c>/rest/v1/rpc/name</c>) and reads its result.</summary>
+    public async Task<T> RpcAsync<T>(string function, object args, CancellationToken ct = default)
+    {
+        using var req = Build(HttpMethod.Post, $"rpc/{function}");
+        req.Content = JsonContent.Create(args, options: Json);
+        using var res = await Send(req, ct);
+        return await res.Content.ReadFromJsonAsync<T>(Json, ct)
+            ?? throw new InvalidOperationException($"{function} returned nothing.");
+    }
+
     private HttpRequestMessage Build(HttpMethod method, string path)
     {
-        var req = new HttpRequestMessage(method, $"{_opt.Url.TrimEnd('/')}/rest/v1/{path}");
-        req.Headers.Add("apikey", _opt.PublishableKey);
-
-        // Forward the caller's token (already validated by the JWT middleware).
-        var auth = context.HttpContext?.Request.Headers.Authorization.ToString();
-        if (AuthenticationHeaderValue.TryParse(auth, out var header) && header.Scheme == "Bearer")
-            req.Headers.Authorization = header;
-
+        var req = new HttpRequestMessage(method, $"{Options.Url.TrimEnd('/')}/rest/v1/{path}");
+        Authorize(req);
         return req;
     }
 
@@ -80,6 +94,47 @@ public sealed class SupabaseRest(HttpClient http, IOptions<SupabaseOptions> opti
         var body = await res.Content.ReadAsStringAsync(ct);
         res.Dispose();
         throw new SupabaseException((int)res.StatusCode, body);
+    }
+}
+
+/// <summary>
+/// Calls Supabase *as the signed-in user* by forwarding their access token, so Row Level Security
+/// decides what they can see. Use this for reading the player's own data.
+/// </summary>
+public sealed class SupabaseRest(HttpClient http, IOptions<SupabaseOptions> options, IHttpContextAccessor context)
+    : SupabaseClient(http, options.Value)
+{
+    protected override void Authorize(HttpRequestMessage req)
+    {
+        req.Headers.Add("apikey", Options.PublishableKey);
+
+        // Forward the caller's token (already validated by the JWT middleware).
+        var auth = context.HttpContext?.Request.Headers.Authorization.ToString();
+        if (AuthenticationHeaderValue.TryParse(auth, out var header) && header.Scheme == "Bearer")
+            req.Headers.Authorization = header;
+    }
+}
+
+/// <summary>
+/// Calls Supabase *as the server* with the secret key, which bypasses Row Level Security.
+/// Use only for writes the game rules control (quiz answers, purchases, pets) — always filter by
+/// the user id from the verified token.
+/// </summary>
+public sealed class SupabaseAdmin(HttpClient http, IOptions<SupabaseOptions> options)
+    : SupabaseClient(http, options.Value)
+{
+    protected override void Authorize(HttpRequestMessage req)
+    {
+        var key = Options.SecretKey;
+        if (string.IsNullOrWhiteSpace(key))
+            throw new InvalidOperationException(
+                "Supabase:SecretKey isn't set. Add the Supabase secret key to user-secrets (locally) or the App Service settings (Azure).");
+
+        req.Headers.Add("apikey", key);
+
+        // New-style secret keys (sb_secret_…) go only in apikey; legacy service_role JWTs also go in Authorization.
+        if (!key.StartsWith("sb_secret_", StringComparison.Ordinal))
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
     }
 }
 

@@ -52,7 +52,7 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
     public async Task Correct_answer_earns_points_and_is_recorded()
     {
         var supabase = new FakeSupabase()
-            .On("quiz_answers?is_correct", "[]", HttpMethod.Get, contentRange: "*/5")
+            .On("rpc/coin_balance", "50")
             .On("quiz_answers", """[{"is_correct":true}]""", HttpMethod.Post)
             .On("quiz_questions", Question);
 
@@ -64,7 +64,8 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
         Assert.Equal(QuizGrader.PointsPerCorrect, result.PointsEarned);
         Assert.Equal(5 * QuizGrader.PointsPerCorrect, result.TotalPoints);
 
-        var insert = supabase.Calls.Single(c => c.Request.Method == HttpMethod.Post);
+        var insert = supabase.Calls.Single(c => c.Request.Method == HttpMethod.Post && c.Request.RequestUri!.AbsolutePath.EndsWith("/quiz_answers"));
+        Assert.Equal("sb_secret_test", insert.Request.Headers.GetValues("apikey").Single()); // written by the server, not the player
         using var row = JsonDocument.Parse(insert.Body!);
         Assert.Equal("user-1", row.RootElement.GetProperty("user_id").GetString());
         Assert.True(row.RootElement.GetProperty("is_correct").GetBoolean());
@@ -75,7 +76,7 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
     public async Task Wrong_answer_earns_nothing_and_reveals_the_answer()
     {
         var supabase = new FakeSupabase()
-            .On("quiz_answers?is_correct", "[]", HttpMethod.Get, contentRange: "*/0")
+            .On("rpc/coin_balance", "0")
             .On("quiz_answers", """[{"is_correct":false}]""", HttpMethod.Post)
             .On("quiz_questions", Question);
 

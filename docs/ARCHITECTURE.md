@@ -78,9 +78,10 @@ PrettySmart/
 3. **Checking the token.** The C# server verifies the token's signature using Supabase's **public** signing
    keys (ES256, discovered automatically from Supabase's OpenID configuration). No Supabase secret is
    stored anywhere. Bad or missing token → `401`.
-4. **Talking to the database.** The server calls Supabase's REST API **forwarding the user's own token**
-   (`Supabase/SupabaseRest.cs`). So Postgres Row Level Security still applies: the server can only see and
-   change the logged-in user's rows, even if the server code had a bug.
+4. **Talking to the database.** Two clients in `Supabase/SupabaseRest.cs`:
+   - `SupabaseRest` — **reads as the user** by forwarding their token, so Row Level Security decides what they see.
+   - `SupabaseAdmin` — **writes as the server** with the secret key, for game-economy data players must not
+     forge (quiz answers, purchases, inventory, pets). Every admin write uses the user id from the verified token.
 5. **Ownership.** When creating rows, the server takes `user_id` from the verified token, never from the
    request body.
 6. **Errors.** Supabase errors become clean responses (`401/403` passed through, otherwise `502`).
@@ -99,10 +100,14 @@ the server loads the question (with its correct answer) → grades the submitted
 | `chapters` | `id`, `class_id`, `title`, `content` | Book/chapter text pasted in Manage. No `created_at` — sort by `id`. |
 | `flashcards` | `id`, `class_id`, `chapter_id` (nullable), `term`, `definition` | `chapter_id` added by `sql/002`. No `created_at`. |
 | `quiz_questions` | `id`, `class_id`, `chapter_id` (nullable), `question`, `question_type` (`multiple_choice` / `type_in`), `is_math`, `choices` (array), `correct_answer` | No `created_at`. |
-| `quiz_answers` | `id`, `user_id`, `class_id`, `chapter_id`, `question_id`, `is_correct`, `points`, `answered_at` | Created by `sql/001`. One row per answer. RLS: users read/insert only their own. |
+| `quiz_answers` | `id`, `user_id`, `class_id`, `chapter_id`, `question_id`, `is_correct`, `points`, `answered_at` | Created by `sql/001`. One row per answer. RLS: users can **read** their own; only the server inserts (since `sql/003`). |
+| `purchases` | `id`, `user_id`, `item_id`, `quantity`, `price_paid`, `purchased_at` | `sql/003`. Every purchase. Read-own; server writes. |
+| `inventory` | `user_id`, `item_id`, `quantity`, `updated_at` | `sql/003`. Equipment and food owned. Read-own; server writes. |
+| `pets` | `id`, `user_id`, `species_id`, `kind`, `nickname`, `status`, `acquired_at` | `sql/003`. Each owned pet (many per species). Read-own; server writes. |
 
-- **Coins** = (number of correct answers) × 10, counted from `quiz_answers`. There is no stored balance yet;
-  spending will need a purchases table.
+- **Coins** = points earned (`sum(quiz_answers.points)`) − coins spent (`sum(purchases.price_paid)`), calculated by
+  the `coin_balance(user)` database function. Buying goes through `buy_item(...)`, which re-checks the balance
+  under a per-player lock (all-or-nothing). Both functions are callable only with the server's secret key.
 - **Chapter average** = % correct over the **last 30** answers in that chapter.
 - **Schema changes** live in `server/sql/` and are run **by hand** in the Supabase SQL Editor, in order.
   They are *not* applied by the deploy. The scripts copy id column types from existing tables, so they work
@@ -121,7 +126,7 @@ The project is **mid-migration** from "browser talks to Supabase directly" to "b
 | Login / sign-up | No — Supabase directly (normal for Supabase auth) |
 | Classes (list/add/delete) | **Yes** — `/api/classes` |
 | Quiz (chapters, questions, grading, points) | **Yes** — `/api/quiz/...` |
-| Coins, pet shop catalog | **Yes** — `/api/coins`, `/api/shop/items` |
+| Coins, pet shop catalog, buying, My Pets | **Yes** — `/api/coins`, `/api/shop/...`, `/api/me`, `/api/pets/{id}` |
 | Manage menu: chapters, flashcards, quiz questions (add/delete/list) | No — still `DB.from(...)` in `js/manage.js` |
 
 Next step for that is moving the Manage-menu calls behind API endpoints, the same way classes were moved.
@@ -199,6 +204,7 @@ which is drawn on the canvas with click hit-testing.
 |---|---|---|
 | Supabase URL + **publishable** key | `js/db.js`, `appsettings.json` | No — designed to be public; RLS protects data |
 | Where the game files are | `GameRoot` in `appsettings*.json` (`../..` in development, `game` when published) | No |
+| Supabase **secret** key (server-only, bypasses RLS) | .NET user-secrets locally (`Supabase:SecretKey`); Azure App Service → Environment variables (`Supabase__SecretKey`) | **Yes** — never in JS, appsettings.json or the repo |
 | Azure deploy credentials | GitHub secret `AZURE_WEBAPP_PUBLISH_PROFILE` | **Yes** — never commit or paste it |
 | Azure app name | GitHub variable `AZURE_WEBAPP_NAME` (`PrettySmartStudy`) | No |
 | Future AI API key (OpenAI etc.) | Should go in Azure App Service → Configuration (environment variable) | **Yes** — never in JS or the repo |

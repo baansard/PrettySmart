@@ -7,7 +7,8 @@
     "price": 70,
     "description": "booooringgg.",
     "personality": ["shy", "shimmery", "gentle"],
-    "care": 2
+    "care": 2,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "pandacorydora",
@@ -17,7 +18,8 @@
     "price": 50,
     "description": "don't eat these catfish...",
     "personality": ["tidy", "social", "tiny"],
-    "care": 1
+    "care": 1,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "orangeplaty",
@@ -27,7 +29,8 @@
     "price": 40,
     "description": "Platy like it's 1999.",
     "personality": ["cheerful", "hardy"],
-    "care": 1
+    "care": 1,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "femalecherrybarb",
@@ -37,7 +40,8 @@
     "price": 30,
     "description": "The cherry on top.",
     "personality": ["gentle", "peachy", "social"],
-    "care": 1
+    "care": 1,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "guppy",
@@ -47,7 +51,8 @@
     "price": 30,
     "description": "47 kids. Doesn't pay child support. Sigh...",
     "personality": ["playful", "fancy", "busy"],
-    "care": 1
+    "care": 1,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "neontetra",
@@ -57,7 +62,8 @@
     "price": 30,
     "description": "Red 40 connoisseur.",
     "personality": ["sparkly", "social"],
-    "care": 1
+    "care": 1,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "fantailgoldfish",
@@ -67,7 +73,8 @@
     "price": 80,
     "description": "Fancy pants!",
     "personality": ["dreamy", "classic", "hungry"],
-    "care": 2
+    "care": 2,
+    "requires": ["tank20"]
   },
   {
     "id": "commonbetta",
@@ -77,7 +84,8 @@
     "price": 80,
     "description": "anger management is going well!",
     "personality": ["bold", "dramatic", "solo"],
-    "care": 2
+    "care": 2,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "classicangelfish",
@@ -87,7 +95,8 @@
     "price": 120,
     "description": "Name is misleading...",
     "personality": ["elegant", "graceful"],
-    "care": 2
+    "care": 2,
+    "requires": ["tank20"]
   },
   {
     "id": "rummynosetetra",
@@ -97,7 +106,8 @@
     "price": 50,
     "description": "Name him Rudolph.",
     "personality": ["social", "speedy"],
-    "care": 2
+    "care": 2,
+    "requires": [["tank10", "tank20"]]
   },
   {
     "id": "discus",
@@ -107,7 +117,8 @@
     "price": 150,
     "description": "don't put this disc in your DVD player...",
     "personality": ["royal", "fancy", "picky"],
-    "care": 3
+    "care": 3,
+    "requires": ["tank20"]
   },
   {
     "id": "plecostomus",
@@ -117,7 +128,8 @@
     "price": 90,
     "description": "Roomba.",
     "personality": ["helpful", "sleepy", "nocturnal"],
-    "care": 2
+    "care": 2,
+    "requires": ["tank20"]
   },
   {
     "id": "cat",
@@ -127,7 +139,9 @@
     "price": 1850,
     "description": "wow.. fancy",
     "personality": ["cuddly", "pig", "slob"],
-    "care": 3
+    "care": 3,
+    "requires": ["foodbowl", ["waterbowl", "fountain"], "scratchingpost"],
+    "petsPerSet": 2
   },
   {
     "id": "bingus",
@@ -137,7 +151,9 @@
     "price": 800,
     "description": "A natural killer...",
     "personality": ["silly", "nonchalant", "hungry"],
-    "care": 2
+    "care": 2,
+    "requires": ["foodbowl", ["waterbowl", "fountain"], "scratchingpost"],
+    "petsPerSet": 2
   },
   {
     "id": "felix",
@@ -147,7 +163,9 @@
     "price": 1000,
     "description": "Found on street",
     "personality": ["calm", "gentle", "patient"],
-    "care": 3
+    "care": 3,
+    "requires": ["foodbowl", ["waterbowl", "fountain"], "scratchingpost"],
+    "petsPerSet": 2
   },
   {
     "id": "sphynx",
@@ -157,7 +175,9 @@
     "price": 500,
     "description": "Reminds me of the chicken I cooked earlier!",
     "personality": ["clingy", "weird", "dramatic"],
-    "care": 3
+    "care": 3,
+    "requires": ["foodbowl", ["waterbowl", "fountain"], "scratchingpost"],
+    "petsPerSet": 2
   },
   {
     "id": "drycatfood",
@@ -178,5 +198,87 @@
     "description": "Colorful flakes for every fish in your tank.",
     "personality": ["colorful", "nutritious"],
     "care": 1
+  },
+  {
+    "id": "premiumcatfood",
+    "kind": "food",
+    "name": "Premium Cat Food",
+    "type": "Gourmet cat food",
+    "price": 60,
+    "description": "Fancy food that keeps cats full for longer.",
+    "personality": ["gourmet", "filling"],
+    "care": 1
+  },
+  {
+    "id": "premiumfishfood",
+    "kind": "food",
+    "name": "Premium Fish Food",
+    "type": "Pellet food",
+    "price": 45,
+    "description": "Rich pellets that keep fish fed for longer.",
+    "personality": ["rich", "filling"],
+    "care": 1
+  },
+  {
+    "id": "foodbowl",
+    "kind": "equipment",
+    "name": "Food Bowl",
+    "type": "Cat supplies",
+    "price": 60,
+    "description": "Somewhere to put dinner. One bowl is enough for two cats.",
+    "personality": [],
+    "care": 0
+  },
+  {
+    "id": "waterbowl",
+    "kind": "equipment",
+    "name": "Water Bowl",
+    "type": "Cat supplies",
+    "price": 50,
+    "description": "A simple bowl of fresh water. Covers two cats.",
+    "personality": [],
+    "care": 0
+  },
+  {
+    "id": "fountain",
+    "kind": "equipment",
+    "name": "Water Fountain",
+    "type": "Cat supplies",
+    "price": 250,
+    "description": "Running water cats can’t resist. Thirsty cats drink more from it. Covers two cats.",
+    "personality": [],
+    "care": 0
+  },
+  {
+    "id": "scratchingpost",
+    "kind": "equipment",
+    "name": "Scratching Post",
+    "type": "Cat supplies",
+    "price": 150,
+    "description": "Saves your furniture and keeps cats happy. One post for every two cats.",
+    "personality": [],
+    "care": 0
+  },
+  {
+    "id": "tank10",
+    "kind": "equipment",
+    "name": "10-Gallon Tank",
+    "type": "Aquarium",
+    "price": 200,
+    "description": "A starter tank for small fish.",
+    "personality": [],
+    "care": 0,
+    "group": "tank"
+  },
+  {
+    "id": "tank20",
+    "kind": "equipment",
+    "name": "20-Gallon Tank",
+    "type": "Aquarium",
+    "price": 400,
+    "description": "Room for bigger fish like discus and angelfish.",
+    "personality": [],
+    "care": 0,
+    "group": "tank"
   }
 ]

@@ -1,6 +1,6 @@
 # Pet Care — Design Plan
 
-**Status:** planned, not built yet. Written 2026-10-10.
+**Status:** Phase 1 (shopping & owning) built 2026-10-10; Phases 2–3 planned.
 
 ## The idea
 

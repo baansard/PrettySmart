@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using PrettySmart.Api.Models;
 using PrettySmart.Api.Quiz;
+using PrettySmart.Api.Shop;
 using PrettySmart.Api.Supabase;
 
 namespace PrettySmart.Api.Endpoints;
@@ -62,7 +63,9 @@ public static class QuizEndpoints
         });
 
         // Grade one answer, record it, and award points.
-        group.MapPost("/answers", async (SubmitAnswerRequest body, ClaimsPrincipal user, SupabaseRest db, CancellationToken ct) =>
+        // The question is read as the player (so they can only answer their own questions);
+        // the answer is written by the server, so players can't record fake correct answers.
+        group.MapPost("/answers", async (SubmitAnswerRequest body, ClaimsPrincipal user, SupabaseRest db, SupabaseAdmin admin, CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(body.QuestionId))
                 return Results.ValidationProblem(new Dictionary<string, string[]> { ["questionId"] = ["Question id is required."] });
@@ -74,7 +77,7 @@ public static class QuizEndpoints
             var correct = QuizGrader.IsCorrect(body.Answer, q.CorrectAnswer, IsTypeIn(q));
             var earned = correct ? QuizGrader.PointsPerCorrect : 0;
 
-            await db.InsertAsync<AnswerRow>("quiz_answers", new
+            await admin.InsertAsync<AnswerRow>("quiz_answers", new
             {
                 user_id = user.UserId(),
                 class_id = q.ClassId,
@@ -84,17 +87,14 @@ public static class QuizEndpoints
                 points = earned,
             }, ct);
 
-            return Results.Ok(new AnswerResult(correct, q.CorrectAnswer, earned, await TotalPoints(db, ct)));
+            return Results.Ok(new AnswerResult(correct, q.CorrectAnswer, earned, await Wallet.BalanceAsync(admin, user, ct)));
         });
 
-        group.MapGet("/points", async (SupabaseRest db, CancellationToken ct) =>
-            new PointsResult(await TotalPoints(db, ct)));
+        group.MapGet("/points", async (ClaimsPrincipal user, SupabaseAdmin admin, CancellationToken ct) =>
+            new PointsResult(await Wallet.BalanceAsync(admin, user, ct)));
 
         return group;
     }
 
     private static bool IsTypeIn(QuestionRow q) => q.IsMath || q.QuestionType == "type_in";
-
-    public static async Task<int> TotalPoints(SupabaseRest db, CancellationToken ct) =>
-        await db.CountAsync("quiz_answers?is_correct=eq.true", ct) * QuizGrader.PointsPerCorrect;
 }

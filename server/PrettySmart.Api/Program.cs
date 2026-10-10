@@ -23,6 +23,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<SupabaseRest>();
+builder.Services.AddHttpClient<SupabaseAdmin>();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(sp => new PrettySmart.Api.Shop.ShopCatalog(
     Path.Combine(builder.Environment.ContentRootPath, "Shop", "catalog.json"),
@@ -31,6 +32,9 @@ builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 
 var app = builder.Build();
+
+if (string.IsNullOrWhiteSpace(supabase.SecretKey))
+    app.Logger.LogWarning("Supabase:SecretKey is not set — quiz answers, coins and buying will fail until it is.");
 
 // Turn Supabase errors into clean API responses instead of 500s.
 app.UseExceptionHandler(errors => errors.Run(async ctx =>

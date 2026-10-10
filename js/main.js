@@ -9,7 +9,7 @@ function loop(time) {
   const dt = Math.min((time - lastTime) / 1000, 0.05); // seconds, capped so tab-switching doesn't teleport her
   lastTime = time;
 
-  if (!Study.open && !Manage.visible) Player.update(dt, Room.getSolids());
+  if (!Study.open && !Manage.visible && !MyPets.visible) Player.update(dt, Room.getSolids());
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -43,7 +43,7 @@ async function start() {
     if (e.key.toLowerCase() === "e" && !Study.open && Study.isNearDesk(Player)) Study.openMenu();
     if (e.key === "Escape") {
       if (PetProfile.visible) { PetProfile.hide(); return; } // close just the profile, keep the shop open
-      Study.close(); PetShop.close(); Manage.hide();
+      Study.close(); PetShop.close(); Manage.hide(); MyPets.hide();
     }
   });
 
@@ -69,8 +69,7 @@ async function start() {
     Assets.load("avatar-right",    "assets/girlcharacter/avatar-right.png"),
     Assets.load("petshopmenu",     "assets/petshopmenu.png"),
     ...PetShop.CATS.map(id => Assets.load("cat_" + id, `assets/cat/${id}front.png`)),
-    Assets.load("drycatfood",      "assets/drycatfood.png"),
-    Assets.load("fishfoodflakes",  "assets/fishfoodflakes.png"),
+    ...PetShop.SUPPLIES.map(id => Assets.load("supply_" + id, PetShop.imagePath(id))),
     ...PetShop.FISH.map(n => Assets.load("fish_" + n, `assets/fish/${n}.png`)),
   ]);
   requestAnimationFrame((t) => { lastTime = t; loop(t); });

@@ -15,6 +15,15 @@ const PetShop = {
   CATS_PER_PAGE: 4,
   catPage: 0,
 
+  // Bottom shelf: food first, then equipment. Food pictures live in assets/, equipment in assets/equipment/.
+  SUPPLIES: [
+    "drycatfood", "premiumcatfood", "fishfoodflakes", "premiumfishfood",
+    "foodbowl", "waterbowl", "fountain", "scratchingpost", "tank10", "tank20",
+  ],
+  EQUIPMENT: ["foodbowl", "waterbowl", "fountain", "scratchingpost", "tank10", "tank20"],
+  SUPPLIES_PER_PAGE: 4,
+  supplyPage: 0,
+
   // Per-fish scale multipliers — 1.0 is default size, lower = smaller.
   _FISH_SCALE: {
     femalecherrybarb: 0.75,
@@ -34,13 +43,17 @@ const PetShop = {
     arrowX:    0.865,  // arrow button left edge
     arrowY:    0.355,  // fish arrow button top edge
     catArrowY: 0.560,  // cat arrow button top edge
+    supplyArrowY: 0.745, // supplies arrow button top edge
     arrowSize: 0.058,  // arrow button width & height
   },
 
   // Where each item was last drawn (screen coords), so clicks can open its profile.
   _hits: [],
 
-  toggle() { this.open = !this.open; },
+  toggle() {
+    this.open = !this.open;
+    if (this.open) PetProfile.load(); // so shelf placeholders can show item names
+  },
   close()  { this.open = false; },
 
   _rect(canvas) {
@@ -80,6 +93,11 @@ const PetShop = {
     const catPages = Math.ceil(this.CATS.length / this.CATS_PER_PAGE);
     if (catPages > 1 && this._inside(cx, cy, this._arrowBtn(r, this._L.catArrowY))) {
       this.catPage = (this.catPage + 1) % catPages;
+      return;
+    }
+    const supplyPages = Math.ceil(this.SUPPLIES.length / this.SUPPLIES_PER_PAGE);
+    if (supplyPages > 1 && this._inside(cx, cy, this._arrowBtn(r, this._L.supplyArrowY))) {
+      this.supplyPage = (this.supplyPage + 1) % supplyPages;
       return;
     }
 
@@ -168,21 +186,57 @@ const PetShop = {
     if (this.CATS.length > this.CATS_PER_PAGE) this._drawArrow(ctx, this._arrowBtn(r, l.catArrowY), true);
   },
 
+  // Food + equipment, 4 per page. Items without a picture yet get a labeled placeholder.
   _drawFoodShelf(ctx, r) {
     const l      = this._L;
     const shelfY = r.y + r.h * l.foodY;
+    const xStart = r.x + r.w * l.xStart;
     const itemH  = r.h * l.foodH;
-    let x = r.x + r.w * l.xStart;
-    const gap = r.w * 0.045;
+    const slotW  = (r.x + r.w * l.xFishEnd - xStart) / this.SUPPLIES_PER_PAGE;
 
-    for (const key of ["drycatfood", "fishfoodflakes"]) {
-      const img = Assets.get(key);
-      if (!img) continue;
-      const scale = itemH / img.height;
-      const iw = img.width * scale;
-      ctx.drawImage(img, x, shelfY - itemH, iw, itemH);
-      this._hits.push({ id: key, x, y: shelfY - itemH, w: iw, h: itemH });
-      x += iw + gap;
-    }
+    const pageStart = this.supplyPage * this.SUPPLIES_PER_PAGE;
+    this.SUPPLIES.slice(pageStart, pageStart + this.SUPPLIES_PER_PAGE).forEach((id, i) => {
+      const img = Assets.get("supply_" + id);
+      const iw  = img ? img.width * (itemH / img.height) : Math.min(slotW * 0.8, itemH);
+      const x   = xStart + slotW * i + (slotW - iw) / 2;
+      const y   = shelfY - itemH;
+      if (img) ctx.drawImage(img, x, y, iw, itemH);
+      else this._drawPlaceholder(ctx, x, y, iw, itemH, PetProfile.nameOf(id));
+      this._hits.push({ id, x, y, w: iw, h: itemH });
+    });
+
+    if (this.SUPPLIES.length > this.SUPPLIES_PER_PAGE) this._drawArrow(ctx, this._arrowBtn(r, l.supplyArrowY), true);
+  },
+
+  // Stand-in box for items whose art isn't drawn yet.
+  _drawPlaceholder(ctx, x, y, w, h, label) {
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.strokeStyle = "#f06d9b";
+    ctx.lineWidth = Math.max(2, w * 0.03);
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    ctx.roundRect(x, y + h * 0.15, w, h * 0.85, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#c2185b";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const size = Math.max(10, Math.round(w * 0.13));
+    ctx.font = `bold ${size}px "Trebuchet MS", sans-serif`;
+    const words = String(label).split(" ");
+    const lines = words.length > 1 ? [words.slice(0, Math.ceil(words.length / 2)).join(" "), words.slice(Math.ceil(words.length / 2)).join(" ")] : words;
+    lines.forEach((line, i) => ctx.fillText(line, x + w / 2, y + h * 0.575 + (i - (lines.length - 1) / 2) * size * 1.15));
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  },
+
+  // Where an item's picture lives.
+  imagePath(id) {
+    if (this.CATS.includes(id)) return `assets/cat/${id}front.png`;
+    if (this.FISH.includes(id)) return `assets/fish/${id}.png`;
+    if (this.EQUIPMENT.includes(id)) return `assets/equipment/${id}.png`;
+    return `assets/${id}.png`;
   },
 };

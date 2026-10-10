@@ -16,11 +16,12 @@ public static class TestHelpers
     /// <summary>A client signed in as user-1 whose Supabase calls go to <paramref name="supabase"/>.</summary>
     public static HttpClient SignedInClient(this WebApplicationFactory<Program> factory, FakeSupabase supabase)
     {
-        var client = factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+        var client = factory.WithWebHostBuilder(b => b.UseSetting("Supabase:SecretKey", "sb_secret_test").ConfigureTestServices(services =>
         {
             services.AddAuthentication(TestAuth.Name)
                 .AddScheme<AuthenticationSchemeOptions, TestAuth>(TestAuth.Name, _ => { });
             services.AddHttpClient<SupabaseRest>().ConfigurePrimaryHttpMessageHandler(() => supabase);
+            services.AddHttpClient<SupabaseAdmin>().ConfigurePrimaryHttpMessageHandler(() => supabase);
         })).CreateClient();
         client.DefaultRequestHeaders.Authorization = new("Bearer", "test-token");
         return client;

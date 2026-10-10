@@ -355,6 +355,133 @@ canvas {
   #pet-overlay, #pet-card, .pet-portrait img, .pet-shadow, .pet-sparkle { animation: none; }
 }
 
+/* ── Buying (inside the pet profile card) ────────────────────────────────── */
+.pet-buy { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+
+.pet-reqs ul { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 7px; }
+.pet-reqs li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  background: #fff;
+  border: 2px solid var(--pink-soft);
+}
+.pet-reqs li small { margin-left: auto; color: #a0607e; font-weight: 800; }
+.req-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+}
+.pet-reqs li.met     .req-mark { background: #6fcf97; }
+.pet-reqs li.missing .req-mark { background: #f06d9b; }
+.pet-reqs li.missing { border-style: dashed; }
+
+.pet-buy-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pet-owned { font-size: 14px; font-weight: 700; color: #a0607e; }
+.pet-owned b { color: var(--pink-deep); }
+
+.pet-buy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 9px 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #fff;
+  font-family: "Fredoka", "Trebuchet MS", sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--pink-deep);
+  transition: transform 0.1s, background 0.15s;
+}
+.pet-buy-btn:hover:not(:disabled) { background: var(--pink-deep); }
+.pet-buy-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--pink-deep); }
+.pet-buy-btn:disabled { background: #e8c3d2; box-shadow: 0 3px 0 #d3a5b8; cursor: not-allowed; }
+
+.pet-buy-msg { font-size: 13px; font-weight: 700; color: #a0607e; text-align: center; }
+.pet-buy-msg.good { color: #2e8b57; }
+
+.pet-noart {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--pink-deep);
+  text-align: center;
+  padding: 0 10px;
+  z-index: 1;
+}
+
+.pet-namer { display: flex; flex-direction: column; gap: 8px; }
+.pet-welcome { font-size: 15px; font-weight: 800; color: var(--pink-deep); }
+.pet-name-row { display: flex; gap: 8px; }
+.pet-name-row .panel-input { flex: 1; min-width: 0; }
+.pet-name-row .pet-buy-btn { margin-left: 0; }
+.pet-skip {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #a0607e;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ── My Pets panel ───────────────────────────────────────────────────────── */
+#pets-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+
+#pets-panel {
+  background: #fce4ec;
+  border-radius: 24px;
+  padding: 32px 36px;
+  width: min(420px, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.mp-row { display: flex; align-items: center; gap: 12px; cursor: default; }
+.mp-row:hover { background: rgba(255,255,255,0.6); }
+.mp-thumb { width: 40px; height: 40px; object-fit: contain; flex: none; }
+.mp-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.mp-name { font-weight: bold; color: #5a2030; overflow-wrap: anywhere; }
+.mp-sub { font-size: 12px; color: #b07090; }
+.mp-qty { font-weight: bold; color: #c2185b; }
+.mp-input { padding: 6px 10px; font-size: 14px; }
+.mp-status {
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffe0b2;
+  color: #b85c00;
+}
+.mp-status.dead { background: #e0d4da; color: #6b4a59; }
+
 /* ── Hint ────────────────────────────────────────────────────────────────── */
 .hint {
   position: fixed;

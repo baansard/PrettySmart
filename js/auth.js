@@ -32,6 +32,7 @@ const Auth = {
     Study.init();
     Manage.init();
     PetProfile.init();
+    MyPets.init();
     Coins.refresh();
     start();
   },

@@ -60,6 +60,10 @@ dotnet test
 | GET    | `/api/coins`         | Your coin balance |
 | GET    | `/api/shop/items`    | Pet shop catalog: name, kind, price, description |
 | GET    | `/api/shop/items/{id}` | One item's profile |
+| GET    | `/api/shop/check/{id}` | Can you buy it? Requirement checklist + reason |
+| POST   | `/api/shop/buy`      | Buy `{ itemId }` (price from the catalog, balance checked in the database) |
+| GET    | `/api/me`            | Your coins, pets and inventory |
+| PATCH  | `/api/pets/{id}`     | Name a pet `{ nickname }` |
 
 ## Controls
 

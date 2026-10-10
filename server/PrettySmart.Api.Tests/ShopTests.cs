@@ -102,10 +102,14 @@ public class ShopEndpointsTests(WebApplicationFactory<Program> factory) : IClass
     }
 
     [Fact]
-    public async Task Coins_come_from_correct_quiz_answers()
+    public async Task Coins_come_from_the_database_balance()
     {
-        var supabase = new FakeSupabase().On("quiz_answers?is_correct=eq.true", "[]", contentRange: "*/12");
+        var supabase = new FakeSupabase().On("rpc/coin_balance", "120");
         var coins = await factory.SignedInClient(supabase).GetFromJsonAsync<CoinsResult>("/api/coins");
         Assert.Equal(120, coins!.Coins);
+        var call = supabase.Calls.Single();
+        Assert.Contains("\"p_user\":\"user-1\"", call.Body);
+        Assert.Equal("sb_secret_test", call.Request.Headers.GetValues("apikey").Single());
+        Assert.Null(call.Request.Headers.Authorization); // new-style secret keys go only in apikey
     }
 }
