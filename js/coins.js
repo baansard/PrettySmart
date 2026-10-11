@@ -10,10 +10,12 @@ const Coins = {
   },
 
   set(n) {
+    const changed = n !== this.value;
     this.value = n;
     const btn = document.getElementById('coins-btn');
     btn.classList.remove('hidden');
     document.getElementById('coins-count').textContent = n.toLocaleString();
+    if (!changed) return; // only bounce when the balance actually changes (not on a wrong answer)
     btn.classList.remove('bump');
     void btn.offsetWidth; // restart the bump animation
     btn.classList.add('bump');

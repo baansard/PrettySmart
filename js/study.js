@@ -368,7 +368,7 @@ const Study = {
     feedback.innerHTML = `
       <p class="quiz-result ${result.correct ? 'right' : 'wrong'}">
         ${result.correct
-          ? `✓ correct! +${result.pointsEarned} coins`
+          ? `✓ correct! +${result.pointsEarned} coin${result.pointsEarned === 1 ? '' : 's'}`
           : `✗ the answer was <b>${this._e(result.correctAnswer)}</b>`}
       </p>
       ${result.archived ? '<p class="quiz-msg">You\'ve mastered this one, so it\'s archived and won\'t show up in quizzes. You can unarchive it in Manage.</p>' : ''}
