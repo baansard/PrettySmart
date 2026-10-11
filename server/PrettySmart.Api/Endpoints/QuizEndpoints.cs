@@ -89,9 +89,12 @@ public static class QuizEndpoints
                 points = earned,
             }, ct);
 
-            var archived = correct && !q.Archived && await ArchiveIfMasteredAsync(q, db, ct);
+            // The archive check and the coin balance don't depend on each other, so run them at the same time.
+            var archivedTask = correct && !q.Archived ? ArchiveIfMasteredAsync(q, db, ct) : Task.FromResult(false);
+            var balanceTask = Wallet.BalanceAsync(admin, user, ct);
+            await Task.WhenAll(archivedTask, balanceTask);
 
-            return Results.Ok(new AnswerResult(correct, q.CorrectAnswer, earned, await Wallet.BalanceAsync(admin, user, ct), archived));
+            return Results.Ok(new AnswerResult(correct, q.CorrectAnswer, earned, balanceTask.Result, archivedTask.Result));
         });
 
         group.MapGet("/points", async (ClaimsPrincipal user, SupabaseAdmin admin, CancellationToken ct) =>
