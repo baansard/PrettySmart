@@ -371,6 +371,7 @@ const Study = {
           ? `✓ correct! +${result.pointsEarned} coins`
           : `✗ the answer was <b>${this._e(result.correctAnswer)}</b>`}
       </p>
+      ${result.archived ? '<p class="quiz-msg">You\'ve mastered this one, so it\'s archived and won\'t show up in quizzes. You can unarchive it in Manage.</p>' : ''}
       <button class="panel-btn" id="quiz-next">next →</button>`;
     const next = document.getElementById('quiz-next');
     next.focus();

@@ -197,8 +197,9 @@ const Manage = {
     const chapterSelect = this._chapterSelect('q-chapter', chapters);
 
     const groupsHtml = this._chapterGroups(qs || [], chapters, q => `
-      <li class="panel-item q-item">
+      <li class="panel-item q-item${q.archived ? ' archived' : ''}">
         <div class="q-info">
+          ${q.archived ? `<div class="q-archived">archived · left out of quizzes <button class="panel-link unarchive-btn" data-id="${this._e(q.id)}">unarchive</button></div>` : ''}
           <div class="q-text">${this._e(q.question)}</div>
           <div class="q-meta">
             ${q.is_math ? 'type-in' : 'multiple choice'}
@@ -272,6 +273,13 @@ const Manage = {
       })
     );
     this._wireMoves('quiz_questions', () => this._renderQuiz());
+    // Unarchiving restarts the count: only correct answers from now on count toward archiving it again.
+    this._panel.querySelectorAll('.unarchive-btn').forEach(b =>
+      b.addEventListener('click', async () => {
+        await DB.from('quiz_questions').update({ archived: false, unarchived_at: new Date().toISOString() }).eq('id', b.dataset.id);
+        this._renderQuiz();
+      })
+    );
   },
 
   // ── Screen 3d: generate study material with AI ───────────────────────────

@@ -851,6 +851,12 @@ canvas {
 
 .q-correct { color: #2e7d32; font-weight: bold; }
 
+/* Archived (mastered) quiz questions in Manage */
+.q-item.archived .q-text,
+.q-item.archived .q-meta { opacity: 0.55; }
+.q-archived { font-size: 11px; font-weight: bold; color: #b07090; text-transform: uppercase; letter-spacing: 0.5px; }
+.q-archived .panel-link { font-size: 11px; text-transform: none; letter-spacing: 0; margin-left: 6px; text-decoration: underline; }
+
 /* Chapter picker on a saved question/flashcard */
 .move-ch { display: block; width: auto; max-width: 100%; margin-top: 4px; padding: 3px 8px; font-size: 11px; }
 

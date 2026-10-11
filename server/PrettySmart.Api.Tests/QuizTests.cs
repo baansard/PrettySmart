@@ -62,7 +62,7 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
 
         Assert.True(result!.Correct);
         Assert.Equal(QuizGrader.PointsPerCorrect, result.PointsEarned);
-        Assert.Equal(5 * QuizGrader.PointsPerCorrect, result.TotalPoints);
+        Assert.Equal(50, result.TotalPoints); // whatever the balance says
 
         var insert = supabase.Calls.Single(c => c.Request.Method == HttpMethod.Post && c.Request.RequestUri!.AbsolutePath.EndsWith("/quiz_answers"));
         Assert.Equal("sb_secret_test", insert.Request.Headers.GetValues("apikey").Single()); // written by the server, not the player
@@ -87,6 +87,72 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
         Assert.False(result!.Correct);
         Assert.Equal(0, result.PointsEarned);
         Assert.Equal("4", result.CorrectAnswer);
+    }
+
+    [Fact]
+    public async Task Tenth_correct_answer_archives_the_question()
+    {
+        var supabase = new FakeSupabase()
+            .On("rpc/coin_balance", "50")
+            .On("quiz_answers", """[{"is_correct":true}]""", HttpMethod.Post)
+            .On("quiz_answers?question_id=eq.7", "[]", HttpMethod.Get, contentRange: $"*/{QuizGrader.ArchiveAfterCorrect}")
+            .On("quiz_questions", Question);
+
+        var result = await (await factory.SignedInClient(supabase)
+            .PostAsJsonAsync("/api/quiz/answers", new { questionId = "7", answer = "4" }))
+            .Content.ReadFromJsonAsync<AnswerResult>();
+
+        Assert.True(result!.Archived);
+        var update = supabase.Calls.Single(c => c.Request.Method == HttpMethod.Patch);
+        Assert.Contains("quiz_questions?id=eq.7", update.Request.RequestUri!.ToString());
+        Assert.Equal("Bearer test-token", update.Request.Headers.Authorization!.ToString()); // done as the player
+        Assert.True(JsonDocument.Parse(update.Body!).RootElement.GetProperty("archived").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Fewer_correct_answers_do_not_archive()
+    {
+        var supabase = new FakeSupabase()
+            .On("rpc/coin_balance", "50")
+            .On("quiz_answers", """[{"is_correct":true}]""", HttpMethod.Post)
+            .On("quiz_answers?question_id=eq.7", "[]", HttpMethod.Get, contentRange: $"*/{QuizGrader.ArchiveAfterCorrect - 1}")
+            .On("quiz_questions", Question);
+
+        var result = await (await factory.SignedInClient(supabase)
+            .PostAsJsonAsync("/api/quiz/answers", new { questionId = "7", answer = "4" }))
+            .Content.ReadFromJsonAsync<AnswerResult>();
+
+        Assert.False(result!.Archived);
+        Assert.DoesNotContain(supabase.Calls, c => c.Request.Method == HttpMethod.Patch);
+    }
+
+    [Fact]
+    public async Task After_unarchiving_only_newer_correct_answers_count()
+    {
+        var supabase = new FakeSupabase()
+            .On("rpc/coin_balance", "50")
+            .On("quiz_answers", """[{"is_correct":true}]""", HttpMethod.Post)
+            .On("quiz_questions",
+                """[{"id":7,"class_id":1,"chapter_id":3,"question":"2+2?","question_type":"type_in","is_math":true,"choices":null,"correct_answer":"4","archived":false,"unarchived_at":"2026-10-01T12:00:00+00:00"}]""");
+
+        await factory.SignedInClient(supabase).PostAsJsonAsync("/api/quiz/answers", new { questionId = "7", answer = "4" });
+
+        var count = supabase.Calls.Single(c => c.Request.Method == HttpMethod.Get && c.Request.RequestUri!.AbsolutePath.EndsWith("/quiz_answers"));
+        Assert.Contains("answered_at=gt.2026-10-01T12:00:00", Uri.UnescapeDataString(count.Request.RequestUri!.ToString()));
+    }
+
+    [Fact]
+    public async Task Archived_questions_are_left_out_of_quizzes()
+    {
+        var supabase = new FakeSupabase().On("quiz_questions",
+            """
+            [{"id":7,"class_id":1,"chapter_id":3,"question":"old","question_type":"type_in","is_math":true,"choices":null,"correct_answer":"4","archived":true},
+             {"id":8,"class_id":1,"chapter_id":3,"question":"new","question_type":"type_in","is_math":true,"choices":null,"correct_answer":"5","archived":false}]
+            """);
+
+        var questions = await factory.SignedInClient(supabase).GetFromJsonAsync<List<QuizQuestion>>("/api/quiz/questions?classId=1&chapterId=3");
+
+        Assert.Equal("new", Assert.Single(questions!).Question);
     }
 
     [Fact]

@@ -18,7 +18,7 @@ public static class QuizEndpoints
     {
         var group = app.MapGroup("/api/quiz").RequireAuthorization();
 
-        // Chapters to pick from, each with its question count and last-30 average.
+        // Chapters to pick from, each with its (non-archived) question count and last-30 average.
         group.MapGet("/chapters", async (string classId, SupabaseRest db, CancellationToken ct) =>
         {
             var cls = Uri.EscapeDataString(classId);
@@ -27,6 +27,7 @@ public static class QuizEndpoints
             await Task.WhenAll(chaptersTask, questionsTask);
 
             var countByChapter = questionsTask.Result
+                .Where(q => !q.Archived)
                 .GroupBy(q => q.ChapterId ?? NoChapter)
                 .ToDictionary(g => g.Key, g => g.Count());
 
@@ -46,7 +47,7 @@ public static class QuizEndpoints
             }));
         });
 
-        // Questions for one chapter, shuffled, with the answers stripped out.
+        // Questions for one chapter (archived ones left out), shuffled, with the answers stripped out.
         group.MapGet("/questions", async (string classId, string? chapterId, SupabaseRest db, CancellationToken ct) =>
         {
             var filter = string.IsNullOrEmpty(chapterId) || chapterId == NoChapter
@@ -56,13 +57,14 @@ public static class QuizEndpoints
                 $"quiz_questions?select=*&class_id=eq.{Uri.EscapeDataString(classId)}&{filter}", ct);
 
             return rows
+                .Where(q => !q.Archived)
                 .Select(q => new QuizQuestion(q.Id, q.Question, IsTypeIn(q),
                     IsTypeIn(q) ? [] : [.. (q.Choices ?? []).OrderBy(_ => Random.Shared.Next())]))
                 .OrderBy(_ => Random.Shared.Next())
                 .ToList();
         });
 
-        // Grade one answer, record it, and award points.
+        // Grade one answer, record it, award points, and archive the question once it's mastered.
         // The question is read as the player (so they can only answer their own questions);
         // the answer is written by the server, so players can't record fake correct answers.
         group.MapPost("/answers", async (SubmitAnswerRequest body, ClaimsPrincipal user, SupabaseRest db, SupabaseAdmin admin, CancellationToken ct) =>
@@ -87,13 +89,30 @@ public static class QuizEndpoints
                 points = earned,
             }, ct);
 
-            return Results.Ok(new AnswerResult(correct, q.CorrectAnswer, earned, await Wallet.BalanceAsync(admin, user, ct)));
+            var archived = correct && !q.Archived && await ArchiveIfMasteredAsync(q, db, ct);
+
+            return Results.Ok(new AnswerResult(correct, q.CorrectAnswer, earned, await Wallet.BalanceAsync(admin, user, ct), archived));
         });
 
         group.MapGet("/points", async (ClaimsPrincipal user, SupabaseAdmin admin, CancellationToken ct) =>
             new PointsResult(await Wallet.BalanceAsync(admin, user, ct)));
 
         return group;
+    }
+
+    /// <summary>
+    /// Archives the question if it has been answered correctly <see cref="QuizGrader.ArchiveAfterCorrect"/> times
+    /// (counting only answers since it was last unarchived). Done as the player, who owns the question.
+    /// </summary>
+    private static async Task<bool> ArchiveIfMasteredAsync(QuestionRow q, SupabaseRest db, CancellationToken ct)
+    {
+        var since = q.UnarchivedAt is { } t ? $"&answered_at=gt.{Uri.EscapeDataString(t.ToString("o"))}" : "";
+        var correctCount = await db.CountAsync(
+            $"quiz_answers?question_id=eq.{Uri.EscapeDataString(q.Id)}&is_correct=is.true{since}", ct);
+        if (correctCount < QuizGrader.ArchiveAfterCorrect) return false;
+
+        await db.UpdateAsync($"quiz_questions?id=eq.{Uri.EscapeDataString(q.Id)}", new { archived = true }, ct);
+        return true;
     }
 
     private static bool IsTypeIn(QuestionRow q) => q.IsMath || q.QuestionType == "type_in";

@@ -16,7 +16,9 @@ public sealed record QuestionRow(
     string? QuestionType,
     bool IsMath,
     List<string>? Choices,
-    string CorrectAnswer);
+    string CorrectAnswer,
+    bool Archived = false,
+    DateTimeOffset? UnarchivedAt = null);
 
 public sealed record AnswerRow(bool IsCorrect);
 
@@ -35,6 +37,7 @@ public sealed record QuizQuestion(string Id, string Question, bool IsTypeIn, Lis
 
 public sealed record SubmitAnswerRequest(string? QuestionId, string? Answer);
 
-public sealed record AnswerResult(bool Correct, string CorrectAnswer, int PointsEarned, int TotalPoints);
+/// <summary><c>Archived</c> is true when this answer just archived the question.</summary>
+public sealed record AnswerResult(bool Correct, string CorrectAnswer, int PointsEarned, int TotalPoints, bool Archived = false);
 
 public sealed record PointsResult(int Points);

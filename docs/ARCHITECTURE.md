@@ -99,7 +99,7 @@ the server loads the question (with its correct answer) → grades the submitted
 | `classes` | `id`, `name`, `user_id`, `created_at` | e.g. "MIS 405". The desk notebooks match these by name. |
 | `chapters` | `id`, `class_id`, `title`, `content` | Book/chapter text pasted in Manage. No `created_at` — sort by `id`. |
 | `flashcards` | `id`, `class_id`, `chapter_id` (nullable), `term`, `definition` | `chapter_id` added by `sql/002`. No `created_at`. |
-| `quiz_questions` | `id`, `class_id`, `chapter_id` (nullable), `question`, `question_type` (`multiple_choice` / `type_in`), `is_math`, `choices` (array), `correct_answer` | No `created_at`. |
+| `quiz_questions` | `id`, `class_id`, `chapter_id` (nullable), `question`, `question_type` (`multiple_choice` / `type_in`), `is_math`, `choices` (array), `correct_answer`, `archived`, `unarchived_at` | No `created_at`. `archived`/`unarchived_at` added by `sql/005`: a question is archived (left out of quizzes) after 10 correct answers since it was last unarchived. |
 | `quiz_answers` | `id`, `user_id`, `class_id`, `chapter_id`, `question_id`, `is_correct`, `points`, `answered_at` | Created by `sql/001`. One row per answer. RLS: users can **read** their own; only the server inserts (since `sql/003`). |
 | `purchases` | `id`, `user_id`, `item_id`, `quantity`, `price_paid`, `purchased_at` | `sql/003`. Every purchase. Read-own; server writes. |
 | `inventory` | `user_id`, `item_id`, `quantity`, `updated_at` | `sql/003`. Equipment and food owned. Read-own; server writes. |

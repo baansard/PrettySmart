@@ -6,7 +6,10 @@ namespace PrettySmart.Api.Quiz;
 /// <summary>Decides whether a submitted answer is correct. Pure logic, no I/O.</summary>
 public static partial class QuizGrader
 {
-    public const int PointsPerCorrect = 10;
+    public const int PointsPerCorrect = 5;
+
+    /// <summary>A question is archived (left out of quizzes) after this many correct answers.</summary>
+    public const int ArchiveAfterCorrect = 10;
 
     public static bool IsCorrect(string? submitted, string correct, bool isMath)
     {
