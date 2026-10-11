@@ -77,7 +77,7 @@ public static class QuizEndpoints
             if (found is not [var q]) return Results.NotFound();
 
             var correct = QuizGrader.IsCorrect(body.Answer, q.CorrectAnswer, IsTypeIn(q));
-            var earned = correct ? QuizGrader.PointsPerCorrect : 0;
+            var earned = correct ? QuizGrader.PointsFor(IsTypeIn(q)) : 0;
 
             await admin.InsertAsync<AnswerRow>("quiz_answers", new
             {

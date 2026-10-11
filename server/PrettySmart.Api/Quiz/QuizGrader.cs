@@ -6,7 +6,13 @@ namespace PrettySmart.Api.Quiz;
 /// <summary>Decides whether a submitted answer is correct. Pure logic, no I/O.</summary>
 public static partial class QuizGrader
 {
-    public const int PointsPerCorrect = 5;
+    /// <summary>Coins for a correct multiple-choice answer.</summary>
+    public const int PointsMultipleChoice = 1;
+
+    /// <summary>Coins for a correct type-in answer (worth more: they take longer, e.g. finance math).</summary>
+    public const int PointsTypeIn = 4;
+
+    public static int PointsFor(bool isTypeIn) => isTypeIn ? PointsTypeIn : PointsMultipleChoice;
 
     /// <summary>A question is archived (left out of quizzes) after this many correct answers.</summary>
     public const int ArchiveAfterCorrect = 10;

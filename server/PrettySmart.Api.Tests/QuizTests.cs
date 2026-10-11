@@ -61,7 +61,7 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
             .Content.ReadFromJsonAsync<AnswerResult>();
 
         Assert.True(result!.Correct);
-        Assert.Equal(QuizGrader.PointsPerCorrect, result.PointsEarned);
+        Assert.Equal(QuizGrader.PointsTypeIn, result.PointsEarned); // the test question is type-in
         Assert.Equal(50, result.TotalPoints); // whatever the balance says
 
         var insert = supabase.Calls.Single(c => c.Request.Method == HttpMethod.Post && c.Request.RequestUri!.AbsolutePath.EndsWith("/quiz_answers"));
@@ -70,6 +70,23 @@ public class QuizEndpointsTests(WebApplicationFactory<Program> factory) : IClass
         Assert.Equal("user-1", row.RootElement.GetProperty("user_id").GetString());
         Assert.True(row.RootElement.GetProperty("is_correct").GetBoolean());
         Assert.Equal("3", row.RootElement.GetProperty("chapter_id").GetString());
+    }
+
+    [Fact]
+    public async Task Multiple_choice_earns_fewer_coins_than_type_in()
+    {
+        var supabase = new FakeSupabase()
+            .On("rpc/coin_balance", "50")
+            .On("quiz_answers", """[{"is_correct":true}]""", HttpMethod.Post)
+            .On("quiz_questions",
+                """[{"id":7,"class_id":1,"chapter_id":3,"question":"Pick B","question_type":"multiple_choice","is_math":false,"choices":["A","B"],"correct_answer":"B"}]""");
+
+        var result = await (await factory.SignedInClient(supabase)
+            .PostAsJsonAsync("/api/quiz/answers", new { questionId = "7", answer = "B" }))
+            .Content.ReadFromJsonAsync<AnswerResult>();
+
+        Assert.Equal(QuizGrader.PointsMultipleChoice, result!.PointsEarned);
+        Assert.True(QuizGrader.PointsMultipleChoice < QuizGrader.PointsTypeIn);
     }
 
     [Fact]
