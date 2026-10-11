@@ -99,6 +99,29 @@ const Manage = {
       </select>`;
   },
 
+  // Small chapter picker on a saved item, so it can be moved without retyping it.
+  _moveSelect(item, chapters) {
+    if (!chapters.length) return '';
+    const cur = String(item.chapter_id ?? '');
+    return `
+      <select class="panel-input move-ch" data-id="${this._e(item.id)}" title="move to chapter">
+        <option value="">no chapter</option>
+        ${chapters.map(c => `<option value="${this._e(c.id)}" ${String(c.id) === cur ? 'selected' : ''}>${this._e(c.title)}</option>`).join('')}
+      </select>`;
+  },
+
+  // Wires up the move pickers: saves the new chapter, then redraws the list.
+  _wireMoves(table, rerender) {
+    this._panel.querySelectorAll('.move-ch').forEach(sel =>
+      sel.addEventListener('change', async () => {
+        const { data, error } = await DB.from(table).update({ chapter_id: sel.value || null }).eq('id', sel.dataset.id).select('id');
+        // No error but no rows means the database didn't allow the edit (no update policy).
+        if (error || !data?.length) { alert("Couldn't move it" + (error ? ': ' + error.message : ' (the database blocked the edit).')); rerender(); return; }
+        rerender();
+      })
+    );
+  },
+
   // Groups items under their chapter (in chapter order, "No chapter" last).
   // renderItem(item) returns the <li> for one item.
   _chapterGroups(items, chapters, renderItem, emptyText) {
@@ -133,7 +156,7 @@ const Manage = {
       </div>
       ${this._chapterGroups(cards || [], chapters, c => `
         <li class="panel-item row small">
-          <span><b>${this._e(c.term)}</b> — ${this._e(c.definition)}</span>
+          <span><b>${this._e(c.term)}</b> — ${this._e(c.definition)}${this._moveSelect(c, chapters)}</span>
           <button class="del-btn" data-id="${c.id}">✕</button>
         </li>`, 'No flashcards yet')}
     `;
@@ -159,6 +182,7 @@ const Manage = {
         this._renderFlashcards();
       })
     );
+    this._wireMoves('flashcards', () => this._renderFlashcards());
   },
 
   // ── Screen 3b: quiz questions (grouped by chapter) ───────────────────────
@@ -180,6 +204,7 @@ const Manage = {
               ? ' · ' + q.choices.map((c,i) => `<span class="${c === q.correct_answer ? 'q-correct' : ''}">${String.fromCharCode(65+i)}) ${this._e(c)}</span>`).join('  ')
               : ' · answer: <span class="q-correct">' + this._e(q.correct_answer) + '</span>'}
           </div>
+          ${this._moveSelect(q, chapters)}
         </div>
         <button class="del-btn" data-id="${q.id}">✕</button>
       </li>`, 'No questions yet');
@@ -244,6 +269,7 @@ const Manage = {
         this._renderQuiz();
       })
     );
+    this._wireMoves('quiz_questions', () => this._renderQuiz());
   },
 
   // ── Screen 3d: generate study material with AI ───────────────────────────

@@ -851,6 +851,9 @@ canvas {
 
 .q-correct { color: #2e7d32; font-weight: bold; }
 
+/* Chapter picker on a saved question/flashcard */
+.move-ch { display: block; width: auto; max-width: 100%; margin-top: 4px; padding: 3px 8px; font-size: 11px; }
+
 /* ── Manage Content overlay ──────────────────────────────────────────────── */
 #manage-overlay {
   position: fixed;

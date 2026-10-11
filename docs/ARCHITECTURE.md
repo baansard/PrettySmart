@@ -127,7 +127,7 @@ The project is **mid-migration** from "browser talks to Supabase directly" to "b
 | Classes (list/add/delete) | **Yes** — `/api/classes` |
 | Quiz (chapters, questions, grading, points) | **Yes** — `/api/quiz/...` |
 | Coins, pet shop catalog, buying, My Pets | **Yes** — `/api/coins`, `/api/shop/...`, `/api/me`, `/api/pets/{id}` |
-| Manage menu: chapters, flashcards, quiz questions (add/delete/list) | No — still `DB.from(...)` in `js/manage.js` |
+| Manage menu: chapters, flashcards, quiz questions (add/delete/list, move to another chapter) | No — still `DB.from(...)` in `js/manage.js` |
 
 Next step for that is moving the Manage-menu calls behind API endpoints, the same way classes were moved.
 
