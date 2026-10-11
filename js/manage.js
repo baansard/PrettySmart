@@ -51,6 +51,7 @@ const Manage = {
           : '<li class="panel-item muted">No classes yet</li>'}
       </ul>
       <button class="panel-link" id="manage-classes-btn">+ manage classes</button>
+      <button class="panel-link" id="notes-btn">notes</button>
     `;
     this._panel.querySelectorAll('.panel-item[data-id]').forEach(el =>
       el.addEventListener('click', () => {
@@ -61,6 +62,7 @@ const Manage = {
       })
     );
     this._on('manage-classes-btn', () => this._renderManageClasses());
+    this._on('notes-btn', () => this._renderNotes());
   },
 
   // ── Screen 2: content type ───────────────────────────────────────────────
@@ -489,6 +491,55 @@ const Manage = {
       b.addEventListener('click', async () => {
         await DB.from('chapters').delete().eq('id', b.dataset.id);
         this._renderChapters();
+      })
+    );
+  },
+
+  // ── Notes: personal ideas / to-dos (not tied to a class) ────────────────
+  async _renderNotes() {
+    const { data: notes, error } = await DB.from('notes').select('*').order('done').order('created_at');
+
+    this._panel.innerHTML = `
+      <button class="panel-back" id="back">← back</button>
+      <h2 class="panel-title">notes</h2>
+      <div class="panel-form">
+        <textarea id="note-text" class="panel-textarea" placeholder="an idea or something to add…"></textarea>
+        <button class="panel-btn" id="note-save">add note</button>
+        <p class="auth-error" id="note-error">${error
+          ? (error.message.includes('notes') ? 'Notes need a one-time database update (server/sql/004_notes.sql).' : this._e(error.message))
+          : ''}</p>
+      </div>
+      <ul class="panel-list small">
+        ${(notes || []).length
+          ? notes.map(n => `
+              <li class="panel-item row note${n.done ? ' done' : ''}">
+                <label class="note-label">
+                  <input type="checkbox" class="note-done" data-id="${this._e(n.id)}" ${n.done ? 'checked' : ''}>
+                  <span>${this._e(n.text)}</span>
+                </label>
+                <button class="del-btn" data-id="${this._e(n.id)}">✕</button>
+              </li>`).join('')
+          : (error ? '' : '<li class="panel-item muted">No notes yet</li>')}
+      </ul>
+    `;
+    this._on('back', () => this._renderClasses());
+    this._on('note-save', async () => {
+      const text = document.getElementById('note-text').value.trim();
+      if (!text) return;
+      const { error } = await DB.from('notes').insert({ text });
+      if (error) { document.getElementById('note-error').textContent = error.message; return; }
+      this._renderNotes();
+    });
+    this._panel.querySelectorAll('.note-done').forEach(cb =>
+      cb.addEventListener('change', async () => {
+        await DB.from('notes').update({ done: cb.checked }).eq('id', cb.dataset.id);
+        this._renderNotes();
+      })
+    );
+    this._panel.querySelectorAll('.del-btn').forEach(b =>
+      b.addEventListener('click', async () => {
+        await DB.from('notes').delete().eq('id', b.dataset.id);
+        this._renderNotes();
       })
     );
   },

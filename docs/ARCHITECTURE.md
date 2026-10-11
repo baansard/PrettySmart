@@ -104,6 +104,7 @@ the server loads the question (with its correct answer) → grades the submitted
 | `purchases` | `id`, `user_id`, `item_id`, `quantity`, `price_paid`, `purchased_at` | `sql/003`. Every purchase. Read-own; server writes. |
 | `inventory` | `user_id`, `item_id`, `quantity`, `updated_at` | `sql/003`. Equipment and food owned. Read-own; server writes. |
 | `pets` | `id`, `user_id`, `species_id`, `kind`, `nickname`, `status`, `acquired_at` | `sql/003`. Each owned pet (many per species). Read-own; server writes. |
+| `notes` | `id`, `user_id`, `text`, `done`, `created_at` | `sql/004`. Personal ideas/to-dos in Manage → notes. RLS: users read and write their own. |
 
 - **Coins** = points earned (`sum(quiz_answers.points)`) − coins spent (`sum(purchases.price_paid)`), calculated by
   the `coin_balance(user)` database function. Buying goes through `buy_item(...)`, which re-checks the balance
@@ -127,7 +128,7 @@ The project is **mid-migration** from "browser talks to Supabase directly" to "b
 | Classes (list/add/delete) | **Yes** — `/api/classes` |
 | Quiz (chapters, questions, grading, points) | **Yes** — `/api/quiz/...` |
 | Coins, pet shop catalog, buying, My Pets | **Yes** — `/api/coins`, `/api/shop/...`, `/api/me`, `/api/pets/{id}` |
-| Manage menu: chapters, flashcards, quiz questions (add/delete/list, move to another chapter) | No — still `DB.from(...)` in `js/manage.js` |
+| Manage menu: chapters, flashcards, quiz questions (add/delete/list, move to another chapter), notes | No — still `DB.from(...)` in `js/manage.js` |
 
 Next step for that is moving the Manage-menu calls behind API endpoints, the same way classes were moved.
 
@@ -174,7 +175,7 @@ all scripts load (`DOMContentLoaded`), which avoids a startup race.
 | `player.js` | Character movement (WASD), collision, sprite drawing |
 | `input.js`, `assets.js` | Keyboard state; image loading |
 | `study.js` | Desk menu (E at desk): notebooks → Book / Flashcards / Quiz; quiz screens |
-| `manage.js` | Manage menu: classes, chapters, flashcards, quiz questions (grouped by chapter) |
+| `manage.js` | Manage menu: classes, chapters, flashcards, quiz questions (grouped by chapter), notes |
 | `petshop.js` | Pet shop drawn on the canvas; fish/cat shelves with paging; click → profile |
 | `coins.js` | Coin balance button; pet profile card |
 
